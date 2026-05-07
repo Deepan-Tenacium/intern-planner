@@ -124,17 +124,6 @@ intern-planner/
 
 ---
 
-## What's Next — Phase 2
-
-Phase 2 will add a **Claude AI assistant** directly inside the app. Planned capabilities:
-
-- Natural-language queries: *"Who has capacity this week and knows React?"*
-- Smart allocation suggestions based on intern skills and project requirements
-- Workload warnings and rebalancing recommendations
-- Conversational interface embedded in the sidebar
-
----
-
 ## Built by
 
 **Deepan Prashanth Prem Kumar** — internship project at **Tenacium DC**
