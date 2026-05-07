@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import interns, projects, allocations
+from app.routers import interns, projects, allocations, skills
 
 app = FastAPI(title="Intern Resource Planner")
 
@@ -14,6 +14,7 @@ app.add_middleware(
 app.include_router(interns.router, prefix="/interns", tags=["interns"])
 app.include_router(projects.router, prefix="/projects", tags=["projects"])
 app.include_router(allocations.router, prefix="/allocations", tags=["allocations"])
+app.include_router(skills.router, prefix="/skills", tags=["skills"])
 
 
 @app.get("/health")

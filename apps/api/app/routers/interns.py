@@ -48,3 +48,16 @@ def delete_intern(intern_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Intern not found")
     db.delete(intern)
     db.commit()
+
+
+@router.post("/{intern_id}/skills", response_model=schemas.InternSkillOut, status_code=201)
+def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Session = Depends(get_db)):
+    if not db.get(models.Intern, intern_id):
+        raise HTTPException(status_code=404, detail="Intern not found")
+    if not db.get(models.Skill, body.skill_id):
+        raise HTTPException(status_code=404, detail="Skill not found")
+    intern_skill = models.InternSkill(intern_id=intern_id, **body.model_dump())
+    db.add(intern_skill)
+    db.commit()
+    db.refresh(intern_skill)
+    return intern_skill

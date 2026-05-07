@@ -14,6 +14,11 @@ class SkillOut(BaseModel):
 
 # --- InternSkill ---
 
+class InternSkillCreate(BaseModel):
+    skill_id: int
+    proficiency: int
+
+
 class InternSkillOut(BaseModel):
     skill: SkillOut
     proficiency: int
