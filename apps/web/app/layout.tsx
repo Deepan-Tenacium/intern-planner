@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-surface text-slate-100 min-h-screen">
         <Sidebar />
-        <main style={{ marginLeft: 240, minHeight: "100vh", padding: "32px 24px" }}>
+        <main style={{ marginLeft: 240, minHeight: "100vh", padding: "32px 24px", overflowX: "hidden" }}>
           {children}
         </main>
       </body>

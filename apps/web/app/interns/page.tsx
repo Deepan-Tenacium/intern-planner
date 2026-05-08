@@ -1,15 +1,12 @@
-import Link from "next/link";
-import type { Allocation, Intern, Project } from "../types";
-import { getLoadStatus, loadColors } from "../lib/workload";
+"use client";
 
-async function fetchData() {
-  const [interns, allocations, projects] = await Promise.all([
-    fetch("http://api:8000/interns/", { cache: "no-store" }).then((r) => r.json() as Promise<Intern[]>),
-    fetch("http://api:8000/allocations/", { cache: "no-store" }).then((r) => r.json() as Promise<Allocation[]>),
-    fetch("http://api:8000/projects/", { cache: "no-store" }).then((r) => r.json() as Promise<Project[]>),
-  ]);
-  return { interns, allocations, projects };
-}
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import type { Allocation, Intern, Project, Skill } from "../types";
+import { getLoadStatus, loadColors } from "../lib/workload";
+import { useToast } from "../components/Toast";
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -26,6 +23,14 @@ const skillCategoryColors: Record<string, string> = {
   design:   "bg-pink-500/15 text-pink-300 ring-1 ring-pink-500/30",
 };
 const skillCategoryFallback = "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30";
+
+const dotColors: Record<string, string> = {
+  green: "bg-green-500",
+  amber: "bg-amber-400",
+  red:   "bg-red-500",
+};
+
+// ── sub-components ────────────────────────────────────────────────────────────
 
 function StatTile({
   label, value, highlight, delay,
@@ -48,12 +53,6 @@ function StatTile({
     </div>
   );
 }
-
-const dotColors: Record<string, string> = {
-  green: "bg-green-500",
-  amber: "bg-amber-400",
-  red:   "bg-red-500",
-};
 
 function InternCard({ intern, allocatedHours, index }: { intern: Intern; allocatedHours: number; index: number }) {
   const status = getLoadStatus(allocatedHours);
@@ -106,35 +105,396 @@ function InternCard({ intern, allocatedHours, index }: { intern: Intern; allocat
   );
 }
 
-export default async function InternsPage() {
-  let interns: Intern[] = [];
-  let allocations: Allocation[] = [];
-  let projects: Project[] = [];
-  let allocatedMap = new Map<number, number>();
-  let error: string | null = null;
+// ── new intern panel ──────────────────────────────────────────────────────────
 
-  try {
-    ({ interns, allocations, projects } = await fetchData());
-    for (const a of allocations) {
-      allocatedMap.set(a.intern_id, (allocatedMap.get(a.intern_id) ?? 0) + a.hours_per_week);
+const inputCls =
+  "w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-500";
+const inputStyle = {
+  background: "#0f1117",
+  border: "1px solid #2a2d3a",
+  color: "#f1f5f9",
+};
+const inputErrorStyle = {
+  background: "#0f1117",
+  border: "1px solid #ef4444",
+  color: "#f1f5f9",
+};
+
+interface InternFormState {
+  name: string;
+  email: string;
+  cohort_start: string;
+  cohort_end: string;
+  weekly_capacity_hours: number;
+}
+
+const emptyInternForm = (): InternFormState => ({
+  name: "",
+  email: "",
+  cohort_start: "",
+  cohort_end: "",
+  weekly_capacity_hours: 40,
+});
+
+function ProficiencyDots({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex gap-1.5 mt-1.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            background: n <= value ? "#6366f1" : "#2a2d3a",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            flexShrink: 0,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function NewInternPanel({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (intern: Intern) => void;
+}) {
+  const [form, setForm] = useState<InternFormState>(emptyInternForm());
+  const [errors, setErrors] = useState<Partial<Record<keyof InternFormState, string>>>({});
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [checkedSkills, setCheckedSkills] = useState<Record<number, boolean>>({});
+  const [proficiencies, setProficiencies] = useState<Record<number, number>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const { showToast, ToastComponent } = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("http://localhost:8000/skills/")
+      .then((r) => r.json())
+      .then((data: Skill[]) => setSkills(data))
+      .catch(() => {});
+  }, [open]);
+
+  function set(field: keyof InternFormState, value: string | number) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => ({ ...e, [field]: undefined }));
+  }
+
+  function validate(): boolean {
+    const e: typeof errors = {};
+    if (!form.name.trim()) e.name = "Name is required";
+    if (!form.email.trim()) e.email = "Email is required";
+    if (!form.cohort_start) e.cohort_start = "Start date is required";
+    if (!form.cohort_end) e.cohort_end = "End date is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function reset() {
+    setForm(emptyInternForm());
+    setErrors({});
+    setCheckedSkills({});
+    setProficiencies({});
+  }
+
+  async function handleSubmit() {
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("http://localhost:8000/interns/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error();
+      const newIntern: Intern = await res.json();
+
+      for (const skill of skills) {
+        if (!checkedSkills[skill.id]) continue;
+        const proficiency = proficiencies[skill.id] ?? 1;
+        const sr = await fetch(`http://localhost:8000/interns/${newIntern.id}/skills`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ skill_id: skill.id, proficiency }),
+        });
+        if (!sr.ok) throw new Error();
+      }
+
+      onCreated(newIntern);
+      reset();
+      onClose();
+    } catch {
+      showToast("Failed to add intern", "error");
+    } finally {
+      setSubmitting(false);
     }
-  } catch {
-    error = "Could not connect to the API. Make sure the backend is running.";
+  }
+
+  function handleCancel() {
+    reset();
+    onClose();
+  }
+
+  return (
+    <>
+      {ToastComponent}
+      {open && (
+        <div
+          className="fixed inset-0"
+          style={{ zIndex: 99, background: "rgba(0,0,0,0.5)" }}
+          onClick={handleCancel}
+        />
+      )}
+
+      <div
+        style={{
+          position: "fixed",
+          right: 0,
+          top: 0,
+          height: "100vh",
+          width: 440,
+          background: "#1a1d27",
+          borderLeft: "1px solid #2a2d3a",
+          zIndex: 100,
+          transform: open ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* header */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: "1px solid #2a2d3a" }}
+        >
+          <h2 className="text-sm font-semibold text-slate-100">Add New Intern</h2>
+          <button
+            onClick={handleCancel}
+            className="text-slate-500 hover:text-slate-200 text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* form */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+          {/* name */}
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Full Name *</label>
+            <input
+              className={inputCls}
+              style={errors.name ? inputErrorStyle : inputStyle}
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Jane Doe"
+            />
+            {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name}</p>}
+          </div>
+
+          {/* email */}
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Email *</label>
+            <input
+              type="email"
+              className={inputCls}
+              style={errors.email ? inputErrorStyle : inputStyle}
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+              placeholder="jane@example.com"
+            />
+            {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email}</p>}
+          </div>
+
+          {/* cohort dates */}
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Cohort Start Date *</label>
+            <input
+              type="date"
+              className={inputCls}
+              style={errors.cohort_start ? inputErrorStyle : inputStyle}
+              value={form.cohort_start}
+              onChange={(e) => set("cohort_start", e.target.value)}
+            />
+            {errors.cohort_start && <p className="text-xs text-red-400 mt-1">{errors.cohort_start}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Cohort End Date *</label>
+            <input
+              type="date"
+              className={inputCls}
+              style={errors.cohort_end ? inputErrorStyle : inputStyle}
+              value={form.cohort_end}
+              onChange={(e) => set("cohort_end", e.target.value)}
+            />
+            {errors.cohort_end && <p className="text-xs text-red-400 mt-1">{errors.cohort_end}</p>}
+          </div>
+
+          {/* weekly capacity */}
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Weekly Capacity (hrs) *</label>
+            <input
+              type="number"
+              min={1}
+              max={40}
+              className={inputCls}
+              style={inputStyle}
+              value={form.weekly_capacity_hours}
+              onChange={(e) => set("weekly_capacity_hours", Math.min(40, Number(e.target.value)))}
+            />
+          </div>
+
+          {/* skills divider */}
+          <div style={{ borderTop: "1px solid #2a2d3a", paddingTop: 16 }}>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4">Skills</p>
+
+            {skills.length === 0 ? (
+              <p className="text-xs text-slate-500">Loading skills…</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {skills.map((skill) => {
+                  const checked = !!checkedSkills[skill.id];
+                  return (
+                    <div key={skill.id}>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setCheckedSkills((prev) => ({ ...prev, [skill.id]: e.target.checked }));
+                            if (e.target.checked && !proficiencies[skill.id]) {
+                              setProficiencies((prev) => ({ ...prev, [skill.id]: 1 }));
+                            }
+                          }}
+                          className="accent-indigo-500"
+                        />
+                        <span className="text-sm text-slate-300">{skill.name}</span>
+                      </label>
+                      {checked && (
+                        <div className="ml-6">
+                          <p className="text-xs text-slate-500 mt-1">Proficiency:</p>
+                          <ProficiencyDots
+                            value={proficiencies[skill.id] ?? 1}
+                            onChange={(v) =>
+                              setProficiencies((prev) => ({ ...prev, [skill.id]: v }))
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* footer */}
+        <div
+          className="flex gap-3 px-6 py-4"
+          style={{ borderTop: "1px solid #2a2d3a" }}
+        >
+          <button
+            onClick={handleCancel}
+            className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
+            style={{ border: "1px solid #2a2d3a" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-sm text-white font-medium transition-all"
+          >
+            {submitting ? "Adding…" : "Add Intern"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── page ──────────────────────────────────────────────────────────────────────
+
+export default function InternsPage() {
+  const [interns, setInterns] = useState<Intern[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const { showToast, ToastComponent } = useToast();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [iRes, aRes, pRes] = await Promise.all([
+          fetch("http://localhost:8000/interns/"),
+          fetch("http://localhost:8000/allocations/"),
+          fetch("http://localhost:8000/projects/"),
+        ]);
+        if (!iRes.ok || !aRes.ok || !pRes.ok) throw new Error();
+        const [i, a, p] = await Promise.all([iRes.json(), aRes.json(), pRes.json()]);
+        setInterns(i);
+        setAllocations(a);
+        setProjects(p);
+      } catch {
+        setError("Could not connect to the API. Make sure the backend is running.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const allocatedMap = new Map<number, number>();
+  for (const a of allocations) {
+    allocatedMap.set(a.intern_id, (allocatedMap.get(a.intern_id) ?? 0) + a.hours_per_week);
   }
 
   const overloaded = interns.filter((i) => getLoadStatus(allocatedMap.get(i.id) ?? 0) === "red").length;
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-100">Interns</h1>
-        <p className="text-sm text-slate-500 mt-1">Overview of your intern cohort</p>
+      {ToastComponent}
+
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100">Interns</h1>
+          <p className="text-sm text-slate-500 mt-1">Overview of your intern cohort</p>
+        </div>
+        <button
+          onClick={() => setPanelOpen(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shrink-0"
+        >
+          <span className="text-base leading-none">+</span>
+          New Intern
+        </button>
       </div>
 
       {error ? (
         <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
           {error}
         </div>
+      ) : loading ? (
+        <p className="text-slate-500 text-sm">Loading…</p>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
@@ -157,6 +517,15 @@ export default async function InternsPage() {
           </div>
         </>
       )}
+
+      <NewInternPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        onCreated={(newIntern) => {
+          setInterns((prev) => [newIntern, ...prev]);
+          showToast("Intern added successfully", "success");
+        }}
+      />
     </div>
   );
 }

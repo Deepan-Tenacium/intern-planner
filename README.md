@@ -23,6 +23,8 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 | **TypeScript** | Type-safe frontend code |
 | **Tailwind CSS** | Utility-first styling |
 | **Docker Compose** | Runs API, frontend, and database together |
+| **Claude Code** | AI pair programmer used to build the project |
+| **GitHub** | Version control at [github.com/Deepan-Tenacium/intern-planner](https://github.com/Deepan-Tenacium/intern-planner) |
 
 ---
 
@@ -39,6 +41,11 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 - Grid of intern cards showing name, email, cohort dates, weekly capacity, and skills with proficiency levels
 - Colour-coded load indicator dot (green = available, amber = at capacity, red = overloaded)
 - Summary stats bar at the top
+- "New Intern" button opens a slide-in panel from the right
+- Form fields: name, email, cohort dates, weekly capacity
+- Skills section: checkbox per skill with proficiency dot selector (1–5)
+- Validates required fields before submitting
+- New intern appears in the grid instantly without page reload
 
 ### Intern Detail (`/interns/[id]`)
 - Full profile for a single intern
@@ -48,6 +55,12 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 ### Projects (`/projects`)
 - List of all projects with status, owner, date range, and required skills
 - Create, edit, and delete projects
+- Filter bar at top: All / Active / Planning / Completed with live counts per status
+- Expandable cards: click "View Details" to see full description, allocated interns, and total hours
+- Pulsing green dot indicator on active projects
+- Timeline progress bar showing how far through the project we are today
+- "Allocate Intern" button opens a modal: intern selector with current load shown, overload warning if intern already over 30 h/week, hours per week and date range inputs
+- "New Project" button opens a slide-in panel with full form and inline validation
 
 ### Allocations (`/allocations`)
 - Table of all intern–project assignments
@@ -57,6 +70,20 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 - Full workload table sorted by load status (overloaded first)
 - Gradient progress bars per intern
 - Summary banner: overloaded / at capacity / has space counts
+
+---
+
+## UI & Design
+
+- Professional dark theme throughout (`#0f1117`)
+- Fixed left sidebar (240 px) with inline SVG icons
+- Active nav link highlighted in indigo
+- Slide-in panels from the right for creating interns and projects
+- Modal overlays for allocating interns
+- Toast notifications — green for success, red for errors, auto-dismiss after 3 seconds
+- Staggered card fade-in animations on page load
+- Hover glow effects on all interactive cards
+- No page reloads for most create/update actions
 
 ---
 
