@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Allocation, Intern, Project } from "./types";
+import { useToast } from "./components/Toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -121,20 +122,28 @@ const IconClock = () => (
     <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+const IconTrash = () => (
+  <svg width="14" height="14" viewBox="0 0 15 15" fill="none">
+    <path d="M5 2h5M2 4h11M4 4l.5 8.5C4.5 13.3 5.1 14 6 14h3c.9 0 1.5-.7 1.5-1.5L11 4"
+      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 // ── Stat Tile ─────────────────────────────────────────────────────────────────
 
 function StatTile({
-  label, value, icon, red, delay, suffix = "",
+  label, value, icon, red, delay, suffix = "", onClick, sub,
 }: {
   label: string; value: number; icon: React.ReactNode;
   red?: boolean; delay: number; suffix?: string;
+  onClick?: () => void; sub?: string;
 }) {
   const counted = useCountUp(value);
   const isRed = red && value > 0;
   return (
     <div
-      className="animate-pop-in rounded-xl border p-5 relative overflow-hidden card-glow"
+      onClick={onClick}
+      className={`animate-pop-in rounded-xl border p-5 relative overflow-hidden card-glow${onClick ? " cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
       style={{
         animationDelay: `${delay}ms`,
         backgroundColor: isRed ? "rgba(239,68,68,0.08)" : "rgba(99,102,241,0.06)",
@@ -154,6 +163,7 @@ function StatTile({
         {counted}{suffix}
       </p>
       <p className="text-xs text-slate-400 mt-1.5 font-medium">{label}</p>
+      {sub && <p className="text-xs text-indigo-400 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -194,6 +204,22 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [barsReady, setBarsReady] = useState(false);
+  const [removedAllocIds, setRemovedAllocIds] = useState<Set<number>>(new Set());
+  const [confirmRecentDeleteId, setConfirmRecentDeleteId] = useState<number | null>(null);
+  const { showToast, ToastComponent } = useToast();
+
+  async function handleRemoveAlloc(id: number) {
+    try {
+      const res = await fetch(`http://localhost:8000/allocations/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setRemovedAllocIds((prev) => new Set([...prev, id]));
+      showToast("Allocation removed", "success");
+    } catch {
+      showToast("Failed to remove allocation", "error");
+    } finally {
+      setConfirmRecentDeleteId(null);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -248,13 +274,16 @@ export default function DashboardPage() {
     allocCountByProject.set(a.project_id, (allocCountByProject.get(a.project_id) ?? 0) + 1);
   }
 
-  // Recent allocations (last 5)
-  const recentAllocs = [...allocations].slice(-5).reverse();
+  // Recent allocations (last 5, excluding locally removed)
+  const recentAllocs = [...allocations]
+    .filter((a) => !removedAllocIds.has(a.id))
+    .slice(-5)
+    .reverse();
 
-  // Cohort grouping
+  // Cohort grouping — keyed by month+year so same-month interns merge
   const cohortMap = new Map<string, Intern[]>();
   for (const intern of interns) {
-    const key = intern.cohort_start;
+    const key = new Date(intern.cohort_start).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
     if (!cohortMap.has(key)) cohortMap.set(key, []);
     cohortMap.get(key)!.push(intern);
   }
@@ -272,7 +301,7 @@ export default function DashboardPage() {
         <StatTile label="Total Interns"      value={interns.length}     icon={<IconPerson />}   delay={0}   />
         <StatTile label="Total Projects"     value={projects.length}    icon={<IconFolder />}   delay={60}  />
         <StatTile label="Total Allocations"  value={allocations.length} icon={<IconCalendar />} delay={120} />
-        <StatTile label="Overloaded"         value={overloaded}         icon={<IconWarning />}  delay={180} red />
+        <StatTile label="Overloaded"         value={overloaded}         icon={<IconWarning />}  delay={180} red onClick={() => router.push("/workload")} sub="→ View workload" />
         <StatTile label="Avg hrs / week"     value={avgHrs}             icon={<IconClock />}    delay={240} suffix=" hrs" />
       </div>
 
@@ -339,7 +368,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={intern.id}
-                    onClick={() => router.push("/workload")}
+                    onClick={() => router.push(`/interns/${intern.id}`)}
                     className="animate-fade-in cursor-pointer"
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
@@ -378,11 +407,13 @@ export default function DashboardPage() {
                 const project = projectMap.get(a.project_id);
                 const name = intern?.name ?? `Intern #${a.intern_id}`;
                 const color = avatarColor(name);
+                const isConfirming = confirmRecentDeleteId === a.id;
                 return (
                   <div
                     key={a.id}
-                    className="animate-fade-in flex items-center gap-3 py-2"
+                    className="animate-fade-in flex items-center gap-3 py-2 rounded-lg px-2 -mx-2 cursor-pointer hover:bg-white/5 transition-colors group"
                     style={{ animationDelay: `${i * 60}ms` }}
+                    onClick={() => router.push(`/interns/${a.intern_id}`)}
                   >
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
@@ -406,6 +437,35 @@ export default function DashboardPage() {
                     >
                       {a.hours_per_week}h/wk
                     </span>
+                    {/* Remove */}
+                    {isConfirming ? (
+                      <div
+                        className="flex items-center gap-1 text-xs shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-slate-400">Sure?</span>
+                        <button
+                          onClick={() => handleRemoveAlloc(a.id)}
+                          className="px-1.5 py-0.5 rounded text-red-400 hover:bg-red-500/10 transition-colors font-medium"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setConfirmRecentDeleteId(null)}
+                          className="px-1.5 py-0.5 rounded text-slate-400 hover:bg-white/5 transition-colors"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmRecentDeleteId(a.id); }}
+                        className="text-slate-700 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10 opacity-0 group-hover:opacity-100 shrink-0"
+                        title="Remove allocation"
+                      >
+                        <IconTrash />
+                      </button>
+                    )}
                   </div>
                 );
               })
@@ -420,27 +480,38 @@ export default function DashboardPage() {
             {cohortMap.size === 0 ? (
               <p className="text-sm text-slate-500">No interns yet.</p>
             ) : (
-              [...cohortMap.entries()].map(([cohortStart, members]) => {
-                const green = members.filter((m) => getStatus(allocatedMap.get(m.id) ?? 0) === "green").length;
-                const amber = members.filter((m) => getStatus(allocatedMap.get(m.id) ?? 0) === "amber").length;
-                const red = members.filter((m) => getStatus(allocatedMap.get(m.id) ?? 0) === "red").length;
+              [...cohortMap.entries()].map(([cohortLabel, members]) => {
+                const available = members.filter((m) => getStatus(allocatedMap.get(m.id) ?? 0) === "green").length;
+                const atCap     = members.filter((m) => getStatus(allocatedMap.get(m.id) ?? 0) === "amber").length;
+                const over      = members.filter((m) => getStatus(allocatedMap.get(m.id) ?? 0) === "red").length;
                 const total = members.length;
 
-                const greenPct = Math.round((green / total) * 100);
-                const amberPct = Math.round((amber / total) * 100);
-                const redPct = 100 - greenPct - amberPct;
+                const greenDeg      = (available / total) * 360;
+                const greenAmberDeg = ((available + atCap) / total) * 360;
+
+                // Build segments, skipping any that are zero to avoid rendering gaps
+                const segments: string[] = [];
+                if (available > 0) segments.push(`#22c55e 0deg ${greenDeg}deg`);
+                if (atCap > 0)     segments.push(`#f59e0b ${greenDeg}deg ${greenAmberDeg}deg`);
+                if (over > 0)      segments.push(`#ef4444 ${greenAmberDeg}deg 360deg`);
+                if (segments.length === 0) segments.push("#2a2d3a 0deg 360deg");
 
                 const conicGrad = barsReady
-                  ? `conic-gradient(#22c55e 0% ${greenPct}%, #fbbf24 ${greenPct}% ${greenPct + amberPct}%, #ef4444 ${greenPct + amberPct}% 100%)`
-                  : "conic-gradient(#2a2d3a 0% 100%)";
+                  ? `conic-gradient(${segments.join(", ")})`
+                  : "conic-gradient(#2a2d3a 0deg 360deg)";
+
+                // Donut hole = 65% of 56px outer diameter
+                const outerSize = 56;
+                const holeSize  = Math.round(outerSize * 0.65);
+                const holeInset = (outerSize - holeSize) / 2;
 
                 return (
-                  <div key={cohortStart} className="flex items-center gap-5">
-                    {/* Pie */}
+                  <div key={cohortLabel} className="flex items-center gap-5">
+                    {/* Donut */}
                     <div
                       style={{
-                        width: 56,
-                        height: 56,
+                        width: outerSize,
+                        height: outerSize,
                         borderRadius: "50%",
                         background: conicGrad,
                         transition: "background 0.8s ease",
@@ -448,32 +519,33 @@ export default function DashboardPage() {
                         position: "relative",
                       }}
                     >
-                      {/* Donut hole */}
+                      {/* Hole */}
                       <div
                         style={{
                           position: "absolute",
-                          inset: 10,
+                          inset: holeInset,
                           borderRadius: "50%",
                           backgroundColor: "#1a1d27",
+                          border: "1.5px solid rgba(15,17,23,0.8)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                         }}
                       >
-                        <span className="text-xs font-semibold text-slate-300">{total}</span>
+                        <span className="text-xs font-bold text-white">{total}</span>
                       </div>
                     </div>
 
                     {/* Details */}
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-100 mb-2">
-                        Cohort {new Date(cohortStart).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                        Cohort {cohortLabel}
                       </p>
                       <div className="space-y-1">
                         {[
-                          { label: "Available", count: green, color: "#22c55e" },
-                          { label: "At capacity", count: amber, color: "#fbbf24" },
-                          { label: "Overloaded", count: red, color: "#ef4444" },
+                          { label: "Available",   count: available, color: "#22c55e" },
+                          { label: "At capacity", count: atCap,     color: "#f59e0b" },
+                          { label: "Overloaded",  count: over,      color: "#ef4444" },
                         ].map(({ label, count, color }) => (
                           <div key={label} className="flex items-center gap-2 text-xs text-slate-500">
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -489,6 +561,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {ToastComponent}
     </div>
   );
 }
