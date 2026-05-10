@@ -19,6 +19,10 @@ class InternSkillCreate(BaseModel):
     proficiency: int
 
 
+class InternSkillUpdate(BaseModel):
+    proficiency: int
+
+
 class InternSkillOut(BaseModel):
     skill: SkillOut
     proficiency: int
@@ -42,6 +46,7 @@ class InternUpdate(BaseModel):
     cohort_start: date | None = None
     cohort_end: date | None = None
     weekly_capacity_hours: int | None = None
+    status: str | None = None
 
 
 class InternOut(BaseModel):
@@ -51,6 +56,7 @@ class InternOut(BaseModel):
     cohort_start: date
     cohort_end: date
     weekly_capacity_hours: int
+    status: str = "active"
     skills: list[InternSkillOut] = []
 
     model_config = {"from_attributes": True}

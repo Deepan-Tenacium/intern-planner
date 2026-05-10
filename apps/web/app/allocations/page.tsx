@@ -55,6 +55,12 @@ const IconX = () => (
   </svg>
 );
 
+const IconPencil = () => (
+  <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+    <path d="M10.5 1.5l3 3-8.5 8.5H2v-3L10.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // ── Stat Tile ──────────────────────────────────────────────────────────────────
 
 function StatTile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -257,6 +263,159 @@ function AddAllocationModal({ interns, projects, internLoadMap, onClose, onCreat
   );
 }
 
+// ── Edit Allocation Panel ──────────────────────────────────────────────────────
+
+interface EditAllocationPanelProps {
+  allocation: Allocation;
+  internName: string;
+  projectName: string;
+  open: boolean;
+  onClose: () => void;
+  onUpdated: (a: Allocation) => void;
+  showToast: (msg: string, variant: "success" | "error") => void;
+}
+
+function EditAllocationPanel({ allocation, internName, projectName, open, onClose, onUpdated, showToast }: EditAllocationPanelProps) {
+  const [hours, setHours] = useState(String(allocation.hours_per_week));
+  const [startDate, setStartDate] = useState(allocation.start_date);
+  const [endDate, setEndDate] = useState(allocation.end_date);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setHours(String(allocation.hours_per_week));
+      setStartDate(allocation.start_date);
+      setEndDate(allocation.end_date);
+    }
+  }, [open, allocation]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch(`http://localhost:8000/allocations/${allocation.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hours_per_week: Number(hours),
+          start_date: startDate,
+          end_date: endDate,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const updated: Allocation = await res.json();
+      onUpdated(updated);
+      showToast("Allocation updated", "success");
+      onClose();
+    } catch {
+      showToast("Failed to update allocation", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputCls = "w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500";
+  const inputStyle = { background: "#0f1117", border: "1px solid #2a2d3a", color: "#f1f5f9" };
+
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0"
+          style={{ zIndex: 99, background: "rgba(0,0,0,0.5)" }}
+          onClick={onClose}
+        />
+      )}
+      <div
+        style={{
+          position: "fixed",
+          right: 0,
+          top: 0,
+          height: "100vh",
+          width: 440,
+          background: "#1a1d27",
+          borderLeft: "1px solid #2a2d3a",
+          zIndex: 100,
+          transform: open ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #2a2d3a" }}>
+          <h2 className="text-sm font-semibold text-slate-100">Edit Allocation</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-200 text-lg leading-none">✕</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="mb-5 p-3 rounded-lg" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)" }}>
+            <p className="text-xs text-slate-400 mb-1">Intern</p>
+            <p className="text-sm font-medium text-slate-100">{internName}</p>
+            <p className="text-xs text-slate-400 mt-2 mb-1">Project</p>
+            <p className="text-sm font-medium text-slate-100">{projectName}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Hours per week</label>
+              <input
+                type="number"
+                min={1}
+                max={40}
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+                required
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Start date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">End date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2" style={{ borderTop: "1px solid #2a2d3a", paddingTop: 16 }}>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
+                style={{ border: "1px solid #2a2d3a" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-sm text-white font-medium transition-all"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Load filter options ────────────────────────────────────────────────────────
 
 type LoadFilter = "all" | "under20" | "20to35" | "over35";
@@ -284,6 +443,7 @@ export default function AllocationsPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
 
   const { showToast, ToastComponent } = useToast();
 
@@ -516,7 +676,7 @@ export default function AllocationsPage() {
                     <td className="px-4 py-3 text-slate-500">{fmtDate(a.start_date)}</td>
                     <td className="px-4 py-3 text-slate-500">{fmtDate(a.end_date)}</td>
 
-                    {/* Remove */}
+                    {/* Actions */}
                     <td className="px-4 py-3" data-no-expand="true">
                       {isConfirming ? (
                         <div className="flex items-center gap-1 text-xs">
@@ -535,13 +695,22 @@ export default function AllocationsPage() {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => setConfirmDeleteId(a.id)}
-                          className="text-slate-600 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10"
-                          title="Remove allocation"
-                        >
-                          <IconTrash />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setEditingAllocation(a)}
+                            className="text-slate-600 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-indigo-500/10"
+                            title="Edit allocation"
+                          >
+                            <IconPencil />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(a.id)}
+                            className="text-slate-600 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10"
+                            title="Remove allocation"
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -608,6 +777,22 @@ export default function AllocationsPage() {
           internLoadMap={internLoadMap}
           onClose={() => setShowModal(false)}
           onCreated={(a) => setAllocations((prev) => [...prev, a])}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Edit Allocation Panel */}
+      {editingAllocation && (
+        <EditAllocationPanel
+          allocation={editingAllocation}
+          internName={internMap.get(editingAllocation.intern_id)?.name ?? `Intern #${editingAllocation.intern_id}`}
+          projectName={projectMap.get(editingAllocation.project_id)?.name ?? `Project #${editingAllocation.project_id}`}
+          open={!!editingAllocation}
+          onClose={() => setEditingAllocation(null)}
+          onUpdated={(updated) => {
+            setAllocations((prev) => prev.map((a) => a.id === updated.id ? updated : a));
+            setEditingAllocation(null);
+          }}
           showToast={showToast}
         />
       )}

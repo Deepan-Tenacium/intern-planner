@@ -75,12 +75,14 @@ function ProjectCard({
   interns,
   index,
   onAllocate,
+  onEdit,
 }: {
   project: Project;
   allocations: Allocation[];
   interns: Intern[];
   index: number;
   onAllocate: (project: Project) => void;
+  onEdit: (project: Project) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -97,14 +99,25 @@ function ProjectCard({
       {/* header */}
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-100">{project.name}</h2>
-        <span
-          className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${badge}`}
-        >
-          {project.status === "active" && (
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-dot" />
-          )}
-          {project.status}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${badge}`}
+          >
+            {project.status === "active" && (
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-dot" />
+            )}
+            {project.status}
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(project); }}
+            className="text-slate-600 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-indigo-500/10"
+            title="Edit project"
+          >
+            <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
+              <path d="M10.5 1.5l3 3-8.5 8.5H2v-3L10.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* owner + dates */}
@@ -590,6 +603,210 @@ function NewProjectPanel({
   );
 }
 
+// ── edit project panel ────────────────────────────────────────────────────────
+
+function EditProjectPanel({
+  project,
+  open,
+  onClose,
+  onUpdated,
+}: {
+  project: Project;
+  open: boolean;
+  onClose: () => void;
+  onUpdated: (p: Project) => void;
+}) {
+  const [form, setForm] = useState<ProjectFormState>({
+    name: project.name,
+    description: project.description ?? "",
+    owner: project.owner,
+    status: project.status,
+    start_date: project.start_date,
+    end_date: project.end_date,
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof ProjectFormState, string>>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const { showToast, ToastComponent: EditToast } = useToast();
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        name: project.name,
+        description: project.description ?? "",
+        owner: project.owner,
+        status: project.status,
+        start_date: project.start_date,
+        end_date: project.end_date,
+      });
+      setErrors({});
+    }
+  }, [open, project]);
+
+  function set(field: keyof ProjectFormState, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => ({ ...e, [field]: undefined }));
+  }
+
+  function validate(): boolean {
+    const e: typeof errors = {};
+    if (!form.name.trim()) e.name = "Name is required";
+    if (!form.owner.trim()) e.owner = "Owner is required";
+    if (!form.start_date) e.start_date = "Start date is required";
+    if (!form.end_date) e.end_date = "End date is required";
+    if (form.start_date && form.end_date && form.end_date <= form.start_date)
+      e.end_date = "End date must be after start date";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function handleSubmit() {
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error();
+      const updated: Project = await res.json();
+      onUpdated(updated);
+      onClose();
+    } catch {
+      showToast("Failed to update project", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      {EditToast}
+      {open && (
+        <div
+          className="fixed inset-0"
+          style={{ zIndex: 99, background: "rgba(0,0,0,0.5)" }}
+          onClick={onClose}
+        />
+      )}
+      <div
+        style={{
+          position: "fixed",
+          right: 0,
+          top: 0,
+          height: "100vh",
+          width: 440,
+          background: "#1a1d27",
+          borderLeft: "1px solid #2a2d3a",
+          zIndex: 100,
+          transform: open ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #2a2d3a" }}>
+          <h2 className="text-sm font-semibold text-slate-100">Edit Project</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-200 text-lg leading-none">✕</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Name *</label>
+            <input
+              className={inputCls}
+              style={errors.name ? inputErrorStyle : inputStyle}
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Project name"
+            />
+            {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Description</label>
+            <textarea
+              rows={3}
+              className={inputCls}
+              style={inputStyle}
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Optional description"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Owner *</label>
+            <input
+              className={inputCls}
+              style={errors.owner ? inputErrorStyle : inputStyle}
+              value={form.owner}
+              onChange={(e) => set("owner", e.target.value)}
+              placeholder="Owner name"
+            />
+            {errors.owner && <p className="text-xs text-red-400 mt-1">{errors.owner}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Status</label>
+            <select
+              className={inputCls}
+              style={inputStyle}
+              value={form.status}
+              onChange={(e) => set("status", e.target.value)}
+            >
+              <option value="planning">planning</option>
+              <option value="active">active</option>
+              <option value="completed">completed</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Start Date *</label>
+            <input
+              type="date"
+              className={inputCls}
+              style={errors.start_date ? inputErrorStyle : inputStyle}
+              value={form.start_date}
+              onChange={(e) => set("start_date", e.target.value)}
+            />
+            {errors.start_date && <p className="text-xs text-red-400 mt-1">{errors.start_date}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">End Date *</label>
+            <input
+              type="date"
+              className={inputCls}
+              style={errors.end_date ? inputErrorStyle : inputStyle}
+              value={form.end_date}
+              onChange={(e) => set("end_date", e.target.value)}
+            />
+            {errors.end_date && <p className="text-xs text-red-400 mt-1">{errors.end_date}</p>}
+          </div>
+        </div>
+
+        <div className="flex gap-3 px-6 py-4" style={{ borderTop: "1px solid #2a2d3a" }}>
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
+            style={{ border: "1px solid #2a2d3a" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-sm text-white font-medium transition-all"
+          >
+            {submitting ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── page ──────────────────────────────────────────────────────────────────────
 
 export default function ProjectsPage() {
@@ -601,6 +818,7 @@ export default function ProjectsPage() {
   const [filter, setFilter] = useState<Filter>("All");
   const [modalProject, setModalProject] = useState<Project | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   const { showToast, ToastComponent } = useToast();
 
@@ -681,6 +899,7 @@ export default function ProjectsPage() {
                 interns={interns}
                 index={i}
                 onAllocate={setModalProject}
+                onEdit={setEditingProject}
               />
             ))}
             {filtered.length === 0 && (
@@ -715,6 +934,19 @@ export default function ProjectsPage() {
             } catch {
               showToast("Failed to allocate intern", "error");
             }
+          }}
+        />
+      )}
+
+      {editingProject && (
+        <EditProjectPanel
+          project={editingProject}
+          open={!!editingProject}
+          onClose={() => setEditingProject(null)}
+          onUpdated={(updated) => {
+            setProjects((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+            setEditingProject(null);
+            showToast("Project updated", "success");
           }}
         />
       )}

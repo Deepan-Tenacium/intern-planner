@@ -61,3 +61,33 @@ def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Sessio
     db.commit()
     db.refresh(intern_skill)
     return intern_skill
+
+
+@router.patch("/{intern_id}/skills/{skill_id}", response_model=schemas.InternSkillOut)
+def update_intern_skill(intern_id: int, skill_id: int, body: schemas.InternSkillUpdate, db: Session = Depends(get_db)):
+    row = db.execute(
+        select(models.InternSkill).where(
+            models.InternSkill.intern_id == intern_id,
+            models.InternSkill.skill_id == skill_id,
+        )
+    ).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Intern skill not found")
+    row.proficiency = body.proficiency
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/{intern_id}/skills/{skill_id}", status_code=204)
+def delete_intern_skill(intern_id: int, skill_id: int, db: Session = Depends(get_db)):
+    row = db.execute(
+        select(models.InternSkill).where(
+            models.InternSkill.intern_id == intern_id,
+            models.InternSkill.skill_id == skill_id,
+        )
+    ).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Intern skill not found")
+    db.delete(row)
+    db.commit()

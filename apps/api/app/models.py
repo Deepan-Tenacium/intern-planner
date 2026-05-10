@@ -15,6 +15,7 @@ class Intern(Base):
     cohort_start = Column(Date, nullable=False)
     cohort_end = Column(Date, nullable=False)
     weekly_capacity_hours = Column(Integer, nullable=False, default=40)
+    status = Column(String, nullable=False, default="active")
 
     skills = relationship("InternSkill", back_populates="intern", cascade="all, delete-orphan")
     allocations = relationship("Allocation", back_populates="intern", cascade="all, delete-orphan")

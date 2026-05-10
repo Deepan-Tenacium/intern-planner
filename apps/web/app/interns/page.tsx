@@ -54,6 +54,29 @@ function StatTile({
   );
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const s = status?.toLowerCase() ?? "active";
+  if (s === "on leave") {
+    return (
+      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border bg-amber-950 text-amber-400 border-amber-800">
+        On Leave
+      </span>
+    );
+  }
+  if (s === "finished") {
+    return (
+      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border bg-gray-800 text-gray-400 border-gray-700">
+        Finished
+      </span>
+    );
+  }
+  return (
+    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border bg-green-950 text-green-400 border-green-800">
+      Active
+    </span>
+  );
+}
+
 function InternCard({ intern, allocatedHours, index }: { intern: Intern; allocatedHours: number; index: number }) {
   const status = getLoadStatus(allocatedHours);
   const dot = dotColors[status];
@@ -67,7 +90,10 @@ function InternCard({ intern, allocatedHours, index }: { intern: Intern; allocat
       <div className="bg-card border border-card-border rounded-xl p-5 flex flex-col gap-3 card-glow h-full">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">{intern.name}</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-semibold text-slate-100">{intern.name}</h2>
+              <StatusBadge status={intern.status} />
+            </div>
             <p className="text-xs text-slate-500 mt-0.5">{intern.email}</p>
             <p className={`text-xs mt-1 font-medium ${loadColors[status].text}`}>
               {allocatedHours} / {intern.weekly_capacity_hours} hrs
@@ -439,6 +465,7 @@ export default function InternsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { showToast, ToastComponent } = useToast();
 
@@ -470,6 +497,10 @@ export default function InternsPage() {
   }
 
   const overloaded = interns.filter((i) => getLoadStatus(allocatedMap.get(i.id) ?? 0) === "red").length;
+
+  const filteredInterns = statusFilter === "all"
+    ? interns
+    : interns.filter((i) => (i.status ?? "active").toLowerCase() === statusFilter);
 
   return (
     <div>
@@ -504,9 +535,27 @@ export default function InternsPage() {
             <StatTile label="Overloaded"         value={overloaded}         delay={180} highlight />
           </div>
 
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Interns</h2>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Interns</h2>
+            <div className="flex items-center gap-1.5">
+              {(["all", "active", "on leave", "finished"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all capitalize ${
+                    statusFilter === s
+                      ? "bg-indigo-600 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                  style={statusFilter !== s ? { border: "1px solid #2a2d3a" } : {}}
+                >
+                  {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {interns.map((intern, i) => (
+            {filteredInterns.map((intern, i) => (
               <InternCard
                 key={intern.id}
                 intern={intern}

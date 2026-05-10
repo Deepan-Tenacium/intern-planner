@@ -35,5 +35,6 @@ export interface Intern {
   cohort_start: string;
   cohort_end: string;
   weekly_capacity_hours: number;
+  status: string;
   skills: InternSkill[];
 }
