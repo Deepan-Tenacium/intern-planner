@@ -6,3 +6,7 @@ node_modules/
 .next/
 *.egg-info/
 .DS_Store
+test-screenshots/
+.playwright-mcp/
+apps/web/test-results/
+apps/web/.last-run.json
