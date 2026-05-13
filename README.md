@@ -23,6 +23,7 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 | **TypeScript** | Type-safe frontend code |
 | **Tailwind CSS** | Utility-first styling |
 | **Docker Compose** | Runs API, frontend, and database together |
+| **Playwright** | End-to-end browser testing framework |
 | **Claude Code** | AI pair programmer used to build the project |
 | **GitHub** | Version control at [github.com/Deepan-Tenacium/intern-planner](https://github.com/Deepan-Tenacium/intern-planner) |
 
@@ -114,6 +115,88 @@ docker compose exec api python seed.py
 # Frontend → http://localhost:3000
 # API docs  → http://localhost:8000/docs
 ```
+
+---
+
+## Testing
+
+This project uses [Playwright](https://playwright.dev/) for automated end-to-end testing.
+
+### Setup
+
+Playwright is already configured. The test suite runs against the live app at localhost:3000.
+
+Make sure the app is running before running tests:
+
+```bash
+docker compose up -d
+```
+
+### Run Tests
+
+```bash
+cd apps/web
+npx playwright test
+```
+
+### Run With Visible Browser
+
+```bash
+npx playwright test --headed
+```
+
+### Run A Single Test
+
+```bash
+npx playwright test --grep "dashboard"
+```
+
+### View Test Report
+
+```bash
+npx playwright test --reporter=html
+npx playwright show-report
+```
+
+### Current Test Coverage
+
+| Test name | What it checks |
+|---|---|
+| dashboard loads | Page title matches `/intern/i` on the root route |
+| sidebar is visible | `<nav>` element is present and visible on the dashboard |
+| all 5 nav links are present | Dashboard, Interns, Projects, Allocations, and Workload links all render |
+| dashboard stat tiles are visible | All five stat tiles (Total Interns, Total Projects, etc.) appear on the dashboard |
+| all 5 pages load without errors or 404 | Every route returns a non-404 response and renders an `<h1>` |
+| new intern panel opens and closes | "New Intern" button shows the slide-in panel; Cancel hides it |
+| new project panel opens and closes | "New Project" button shows the slide-in panel; Cancel dismisses it |
+| clicking an intern card navigates to profile | Clicking the first intern card routes to `/interns/[id]` |
+| no horizontal scroll on any page | `scrollWidth` never exceeds `clientWidth` on any of the five routes |
+| global search opens with Ctrl+K | Pressing Ctrl+K reveals a search input or dialog |
+
+### Test Screenshots
+
+Failed test screenshots are saved to:
+
+```
+apps/web/test-results/
+```
+
+Screenshots taken during MCP browser sessions are saved to:
+
+```
+test-screenshots/
+```
+
+### MCP Browser Testing
+
+Claude Code is configured with Playwright MCP which allows the AI to control a real browser during development. This is used for:
+
+- Exploring bugs interactively
+- Verifying features visually
+- Writing new tests faster
+
+Trigger with prompts like:
+> "Navigate to localhost:3000/interns and tell me what you see"
 
 ---
 
