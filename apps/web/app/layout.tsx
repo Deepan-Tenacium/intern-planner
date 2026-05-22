@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Sidebar from "./components/Sidebar";
+import AppShell from "./components/AppShell";
+import Providers from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,10 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-surface text-slate-100 min-h-screen">
-        <Sidebar />
-        <main style={{ marginLeft: 240, minHeight: "100vh", padding: "32px 24px", overflowX: "hidden" }}>
-          {children}
-        </main>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
       </body>
     </html>
   );

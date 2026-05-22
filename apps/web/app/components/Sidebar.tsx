@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
   {
@@ -67,6 +68,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -149,10 +151,76 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* User info + sign out */}
+      {session?.user && (
+        <div
+          style={{
+            padding: "14px 20px",
+            borderTop: "1px solid #2a2d3a",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ color: "#f1f5f9", fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+            {session.user.name ?? session.user.email}
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            {(session.user as any).role === "manager" ? (
+              <span
+                style={{
+                  display: "inline-block",
+                  backgroundColor: "#3730a3",
+                  color: "#a5b4fc",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                Manager
+              </span>
+            ) : (
+              <span
+                style={{
+                  display: "inline-block",
+                  backgroundColor: "#1e2130",
+                  color: "#94a3b8",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                Intern
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#64748b",
+              fontSize: 12,
+              cursor: "pointer",
+              padding: 0,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#64748b"; }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+
       {/* Bottom branding */}
       <div
         style={{
-          padding: "16px 20px",
+          padding: "12px 20px",
           borderTop: "1px solid #2a2d3a",
           flexShrink: 0,
         }}

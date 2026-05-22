@@ -211,7 +211,7 @@ function NewInternPanel({
 
   useEffect(() => {
     if (!open) return;
-    fetch("http://localhost:8000/skills/")
+    fetch("/api/proxy/skills/")
       .then((r) => r.json())
       .then((data: Skill[]) => setSkills(data))
       .catch(() => {});
@@ -243,7 +243,7 @@ function NewInternPanel({
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:8000/interns/", {
+      const res = await fetch("/api/proxy/interns/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -254,7 +254,7 @@ function NewInternPanel({
       for (const skill of skills) {
         if (!checkedSkills[skill.id]) continue;
         const proficiency = proficiencies[skill.id] ?? 1;
-        const sr = await fetch(`http://localhost:8000/interns/${newIntern.id}/skills`, {
+        const sr = await fetch(`/api/proxy/interns/${newIntern.id}/skills`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ skill_id: skill.id, proficiency }),
@@ -473,10 +473,14 @@ export default function InternsPage() {
     async function load() {
       try {
         const [iRes, aRes, pRes] = await Promise.all([
-          fetch("http://localhost:8000/interns/"),
-          fetch("http://localhost:8000/allocations/"),
-          fetch("http://localhost:8000/projects/"),
+          fetch("/api/proxy/interns/"),
+          fetch("/api/proxy/allocations/"),
+          fetch("/api/proxy/projects/"),
         ]);
+        if (iRes.status === 401 || iRes.status === 403) {
+          setError("SESSION_EXPIRED");
+          return;
+        }
         if (!iRes.ok || !aRes.ok || !pRes.ok) throw new Error();
         const [i, a, p] = await Promise.all([iRes.json(), aRes.json(), pRes.json()]);
         setInterns(i);
@@ -522,7 +526,9 @@ export default function InternsPage() {
 
       {error ? (
         <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
-          {error}
+          {error === "SESSION_EXPIRED"
+            ? <>Session expired. Please <a href="/login" className="underline">log in again</a>.</>
+            : error}
         </div>
       ) : loading ? (
         <p className="text-slate-500 text-sm">Loading…</p>

@@ -318,7 +318,7 @@ function EditInternPanel({
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:8000/interns/${intern.id}`, {
+      const res = await fetch(`/api/proxy/interns/${intern.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -500,7 +500,7 @@ function EditSkillsPanel({
   useEffect(() => {
     if (!open) return;
     setLoadingSkills(true);
-    fetch("http://localhost:8000/skills/")
+    fetch("/api/proxy/skills/")
       .then((r) => r.json())
       .then((data: Skill[]) => {
         setAllSkills(data);
@@ -536,17 +536,17 @@ function EditSkillsPanel({
         const { checked, proficiency, original } = state;
 
         if (!original.checked && checked) {
-          const r = await fetch(`http://localhost:8000/interns/${intern.id}/skills`, {
+          const r = await fetch(`/api/proxy/interns/${intern.id}/skills`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ skill_id: id, proficiency }),
           });
           if (!r.ok) throw new Error();
         } else if (original.checked && !checked) {
-          const r = await fetch(`http://localhost:8000/interns/${intern.id}/skills/${id}`, { method: "DELETE" });
+          const r = await fetch(`/api/proxy/interns/${intern.id}/skills/${id}`, { method: "DELETE" });
           if (!r.ok) throw new Error();
         } else if (original.checked && checked && proficiency !== original.proficiency) {
-          const r = await fetch(`http://localhost:8000/interns/${intern.id}/skills/${id}`, {
+          const r = await fetch(`/api/proxy/interns/${intern.id}/skills/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ proficiency }),
@@ -555,7 +555,7 @@ function EditSkillsPanel({
         }
       }
 
-      const refreshed = await fetch(`http://localhost:8000/interns/${intern.id}`);
+      const refreshed = await fetch(`/api/proxy/interns/${intern.id}`);
       if (!refreshed.ok) throw new Error();
       const updated: Intern = await refreshed.json();
       onUpdated(updated);
@@ -855,6 +855,7 @@ export default function InternProfilePage({ params }: { params: { id: string } }
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [authError, setAuthError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editSkillsOpen, setEditSkillsOpen] = useState(false);
 
@@ -862,11 +863,12 @@ export default function InternProfilePage({ params }: { params: { id: string } }
 
   useEffect(() => {
     Promise.all([
-      fetch(`http://localhost:8000/interns/${id}`),
-      fetch("http://localhost:8000/allocations/").then((r) => r.json() as Promise<Allocation[]>),
-      fetch("http://localhost:8000/projects/").then((r) => r.json() as Promise<Project[]>),
+      fetch(`/api/proxy/interns/${id}`),
+      fetch("/api/proxy/allocations/").then((r) => r.json() as Promise<Allocation[]>),
+      fetch("/api/proxy/projects/").then((r) => r.json() as Promise<Project[]>),
     ])
       .then(async ([internRes, allocs, projs]) => {
+        if (internRes.status === 401 || internRes.status === 403) { setAuthError(true); return; }
         if (internRes.status === 404) { setNotFound(true); return; }
         if (!internRes.ok) throw new Error();
         const internData: Intern = await internRes.json();
@@ -883,6 +885,14 @@ export default function InternProfilePage({ params }: { params: { id: string } }
       <div className="flex items-center gap-3 text-slate-500 text-sm pt-8">
         <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
         Loading…
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
+        Session expired. Please <a href="/login" className="underline">log in again</a>.
       </div>
     );
   }

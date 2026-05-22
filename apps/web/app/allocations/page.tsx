@@ -124,7 +124,7 @@ function AddAllocationModal({ interns, projects, internLoadMap, onClose, onCreat
     if (!internId || !projectId || !hours || !startDate || !endDate) return;
     setSaving(true);
     try {
-      const res = await fetch("http://localhost:8000/allocations/", {
+      const res = await fetch("/api/proxy/allocations/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -293,7 +293,7 @@ function EditAllocationPanel({ allocation, internName, projectName, open, onClos
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:8000/allocations/${allocation.id}`, {
+      const res = await fetch(`/api/proxy/allocations/${allocation.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -449,11 +449,24 @@ export default function AllocationsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:8000/allocations/").then((r) => r.json() as Promise<Allocation[]>),
-      fetch("http://localhost:8000/interns/").then((r) => r.json() as Promise<Intern[]>),
-      fetch("http://localhost:8000/projects/").then((r) => r.json() as Promise<Project[]>),
+      fetch("/api/proxy/allocations/"),
+      fetch("/api/proxy/interns/"),
+      fetch("/api/proxy/projects/"),
     ])
-      .then(([a, i, p]) => { setAllocations(a); setInterns(i); setProjects(p); })
+      .then(async ([aRes, iRes, pRes]) => {
+        if (aRes.status === 401 || aRes.status === 403) {
+          setError("SESSION_EXPIRED");
+          return;
+        }
+        const [a, i, p] = await Promise.all([
+          aRes.json() as Promise<Allocation[]>,
+          iRes.json() as Promise<Intern[]>,
+          pRes.json() as Promise<Project[]>,
+        ]);
+        setAllocations(a);
+        setInterns(i);
+        setProjects(p);
+      })
       .catch(() => setError("Could not connect to the API. Make sure the backend is running."))
       .finally(() => setLoading(false));
   }, []);
@@ -495,7 +508,7 @@ export default function AllocationsPage() {
 
   async function handleDelete(id: number) {
     try {
-      const res = await fetch(`http://localhost:8000/allocations/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/proxy/allocations/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setAllocations((prev) => prev.filter((a) => a.id !== id));
       showToast("Allocation removed", "success");
@@ -520,7 +533,9 @@ export default function AllocationsPage() {
   if (error) {
     return (
       <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
-        {error}
+        {error === "SESSION_EXPIRED"
+          ? <>Session expired. Please <a href="/login" className="underline">log in again</a>.</>
+          : error}
       </div>
     );
   }

@@ -240,7 +240,7 @@ function AllocateModal({
   async function handleSubmit() {
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:8000/allocations/", {
+      const res = await fetch("/api/proxy/allocations/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -428,7 +428,7 @@ function NewProjectPanel({
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:8000/projects/", {
+      const res = await fetch("/api/proxy/projects/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -663,7 +663,7 @@ function EditProjectPanel({
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:8000/projects/${project.id}`, {
+      const res = await fetch(`/api/proxy/projects/${project.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -823,7 +823,7 @@ export default function ProjectsPage() {
   const { showToast, ToastComponent } = useToast();
 
   const fetchAllocations = useCallback(async () => {
-    const res = await fetch("http://localhost:8000/allocations/");
+    const res = await fetch("/api/proxy/allocations/");
     if (!res.ok) throw new Error();
     setAllocations(await res.json());
   }, []);
@@ -832,10 +832,14 @@ export default function ProjectsPage() {
     async function load() {
       try {
         const [pRes, aRes, iRes] = await Promise.all([
-          fetch("http://localhost:8000/projects/"),
-          fetch("http://localhost:8000/allocations/"),
-          fetch("http://localhost:8000/interns/"),
+          fetch("/api/proxy/projects/"),
+          fetch("/api/proxy/allocations/"),
+          fetch("/api/proxy/interns/"),
         ]);
+        if (pRes.status === 401 || pRes.status === 403) {
+          setError("SESSION_EXPIRED");
+          return;
+        }
         if (!pRes.ok || !aRes.ok || !iRes.ok) throw new Error();
         const [p, a, i] = await Promise.all([pRes.json(), aRes.json(), iRes.json()]);
         setProjects(p);
@@ -882,7 +886,9 @@ export default function ProjectsPage() {
 
       {error ? (
         <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
-          {error}
+          {error === "SESSION_EXPIRED"
+            ? <>Session expired. Please <a href="/login" className="underline">log in again</a>.</>
+            : error}
         </div>
       ) : loading ? (
         <p className="text-slate-500 text-sm">Loading…</p>

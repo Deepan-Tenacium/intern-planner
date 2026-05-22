@@ -1,9 +1,21 @@
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy import (
-    Column, Integer, String, Date, ForeignKey, UniqueConstraint
+    Column, Integer, String, Date, DateTime, ForeignKey, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=True)
+    name = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="intern")
+    github_id = Column(String, unique=True, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 class Intern(Base):

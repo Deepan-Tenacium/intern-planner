@@ -1,12 +1,22 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]/route";
 import type { Allocation, Intern } from "../types";
 import { getLoadStatus } from "../lib/workload";
 
-async function fetchData() {
-  const [interns, allocations] = await Promise.all([
-    fetch("http://api:8000/interns/", { cache: "no-store" }).then((r) => r.json() as Promise<Intern[]>),
-    fetch("http://api:8000/allocations/", { cache: "no-store" }).then((r) => r.json() as Promise<Allocation[]>),
+async function fetchData(token: string) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+  const API = process.env.INTERNAL_API_URL ?? "http://api:8000";
+  const [iRes, aRes] = await Promise.all([
+    fetch(`${API}/interns/`, { cache: "no-store", headers }),
+    fetch(`${API}/allocations/`, { cache: "no-store", headers }),
   ]);
-  return { interns, allocations };
+  if (iRes.status === 401 || iRes.status === 403) throw new Error("AUTH");
+  if (!iRes.ok || !aRes.ok) throw new Error("API");
+  const [interns, allocations] = await Promise.all([iRes.json(), aRes.json()]);
+  return { interns: interns as Intern[], allocations: allocations as Allocation[] };
 }
 
 const statusOrder = { red: 0, amber: 1, green: 2 };
@@ -28,10 +38,15 @@ export default async function WorkloadPage() {
   let allocations: Allocation[] = [];
   let error: string | null = null;
 
+  const session = await getServerSession(authOptions);
+  const token = (session?.user as any)?.backendToken ?? "";
+
   try {
-    ({ interns, allocations } = await fetchData());
-  } catch {
-    error = "Could not connect to the API. Make sure the backend is running.";
+    ({ interns, allocations } = await fetchData(token));
+  } catch (e: any) {
+    error = e.message === "AUTH"
+      ? "SESSION_EXPIRED"
+      : "Could not connect to the API. Make sure the backend is running.";
   }
 
   const allocatedMap = new Map<number, number>();
@@ -61,7 +76,9 @@ export default async function WorkloadPage() {
 
       {error ? (
         <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
-          {error}
+          {error === "SESSION_EXPIRED"
+            ? <>Session expired. Please <a href="/login" className="underline">log in again</a>.</>
+            : error}
         </div>
       ) : (
         <>

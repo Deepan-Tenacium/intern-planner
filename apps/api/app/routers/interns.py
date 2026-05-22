@@ -3,17 +3,18 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.database import get_db
 from app import models, schemas
+from app.auth import get_current_user, require_manager
 
 router = APIRouter()
 
 
 @router.get("/", response_model=list[schemas.InternOut])
-def list_interns(db: Session = Depends(get_db)):
+def list_interns(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     return db.execute(select(models.Intern)).scalars().all()
 
 
 @router.get("/{intern_id}", response_model=schemas.InternOut)
-def get_intern(intern_id: int, db: Session = Depends(get_db)):
+def get_intern(intern_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     intern = db.get(models.Intern, intern_id)
     if not intern:
         raise HTTPException(status_code=404, detail="Intern not found")
@@ -21,7 +22,7 @@ def get_intern(intern_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.InternOut, status_code=201)
-def create_intern(body: schemas.InternCreate, db: Session = Depends(get_db)):
+def create_intern(body: schemas.InternCreate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
     intern = models.Intern(**body.model_dump())
     db.add(intern)
     db.commit()
@@ -30,7 +31,7 @@ def create_intern(body: schemas.InternCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{intern_id}", response_model=schemas.InternOut)
-def update_intern(intern_id: int, body: schemas.InternUpdate, db: Session = Depends(get_db)):
+def update_intern(intern_id: int, body: schemas.InternUpdate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
     intern = db.get(models.Intern, intern_id)
     if not intern:
         raise HTTPException(status_code=404, detail="Intern not found")
@@ -42,7 +43,7 @@ def update_intern(intern_id: int, body: schemas.InternUpdate, db: Session = Depe
 
 
 @router.delete("/{intern_id}", status_code=204)
-def delete_intern(intern_id: int, db: Session = Depends(get_db)):
+def delete_intern(intern_id: int, db: Session = Depends(get_db), current_user=Depends(require_manager)):
     intern = db.get(models.Intern, intern_id)
     if not intern:
         raise HTTPException(status_code=404, detail="Intern not found")
@@ -51,7 +52,7 @@ def delete_intern(intern_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{intern_id}/skills", response_model=schemas.InternSkillOut, status_code=201)
-def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Session = Depends(get_db)):
+def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
     if not db.get(models.Intern, intern_id):
         raise HTTPException(status_code=404, detail="Intern not found")
     if not db.get(models.Skill, body.skill_id):
@@ -64,7 +65,7 @@ def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Sessio
 
 
 @router.patch("/{intern_id}/skills/{skill_id}", response_model=schemas.InternSkillOut)
-def update_intern_skill(intern_id: int, skill_id: int, body: schemas.InternSkillUpdate, db: Session = Depends(get_db)):
+def update_intern_skill(intern_id: int, skill_id: int, body: schemas.InternSkillUpdate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
     row = db.execute(
         select(models.InternSkill).where(
             models.InternSkill.intern_id == intern_id,
@@ -80,7 +81,7 @@ def update_intern_skill(intern_id: int, skill_id: int, body: schemas.InternSkill
 
 
 @router.delete("/{intern_id}/skills/{skill_id}", status_code=204)
-def delete_intern_skill(intern_id: int, skill_id: int, db: Session = Depends(get_db)):
+def delete_intern_skill(intern_id: int, skill_id: int, db: Session = Depends(get_db), current_user=Depends(require_manager)):
     row = db.execute(
         select(models.InternSkill).where(
             models.InternSkill.intern_id == intern_id,

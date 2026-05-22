@@ -210,7 +210,11 @@ export default function DashboardPage() {
 
   async function handleRemoveAlloc(id: number) {
     try {
-      const res = await fetch(`http://localhost:8000/allocations/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/proxy/allocations/${id}`, { method: "DELETE" });
+      if (res.status === 401 || res.status === 403) {
+        setError("Session expired. Please log in again.|/login");
+        return;
+      }
       if (!res.ok) throw new Error();
       setRemovedAllocIds((prev) => new Set([...prev, id]));
       showToast("Allocation removed", "success");
@@ -223,11 +227,20 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:8000/interns/", { cache: "no-store" }).then((r) => r.json() as Promise<Intern[]>),
-      fetch("http://localhost:8000/projects/", { cache: "no-store" }).then((r) => r.json() as Promise<Project[]>),
-      fetch("http://localhost:8000/allocations/", { cache: "no-store" }).then((r) => r.json() as Promise<Allocation[]>),
+      fetch("/api/proxy/interns/", { cache: "no-store" }),
+      fetch("/api/proxy/projects/", { cache: "no-store" }),
+      fetch("/api/proxy/allocations/", { cache: "no-store" }),
     ])
-      .then(([interns, projects, allocations]) => {
+      .then(async ([ri, rp, ra]) => {
+        if (ri.status === 401 || ri.status === 403) {
+          setError("Session expired. Please log in again.|/login");
+          return;
+        }
+        const [interns, projects, allocations] = await Promise.all([
+          ri.json() as Promise<Intern[]>,
+          rp.json() as Promise<Project[]>,
+          ra.json() as Promise<Allocation[]>,
+        ]);
         setData({ interns, projects, allocations });
         setTimeout(() => setBarsReady(true), 100);
       })
@@ -235,9 +248,10 @@ export default function DashboardPage() {
   }, []);
 
   if (error) {
+    const [msg, link] = error.split("|");
     return (
       <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 text-sm">
-        {error}
+        {msg}{link && <> <a href={link} className="underline">Log in again</a></>}
       </div>
     );
   }
