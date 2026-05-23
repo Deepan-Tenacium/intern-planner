@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Project, Allocation, Intern } from "../types";
 import { useToast } from "../components/Toast";
+import { useIsManager } from "../hooks/useRole";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ function ProjectCard({
   index,
   onAllocate,
   onEdit,
+  isManager,
 }: {
   project: Project;
   allocations: Allocation[];
@@ -83,6 +85,7 @@ function ProjectCard({
   index: number;
   onAllocate: (project: Project) => void;
   onEdit: (project: Project) => void;
+  isManager: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -108,15 +111,17 @@ function ProjectCard({
             )}
             {project.status}
           </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(project); }}
-            className="text-slate-600 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-indigo-500/10"
-            title="Edit project"
-          >
-            <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
-              <path d="M10.5 1.5l3 3-8.5 8.5H2v-3L10.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          {isManager && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(project); }}
+              className="text-slate-600 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-indigo-500/10"
+              title="Edit project"
+            >
+              <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
+                <path d="M10.5 1.5l3 3-8.5 8.5H2v-3L10.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -197,12 +202,14 @@ function ProjectCard({
         >
           {expanded ? "Collapse" : "View Details"}
         </button>
-        <button
-          onClick={() => onAllocate(project)}
-          className="flex-1 text-xs font-medium py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all"
-        >
-          Allocate Intern
-        </button>
+        {isManager && (
+          <button
+            onClick={() => onAllocate(project)}
+            className="flex-1 text-xs font-medium py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all"
+          >
+            Allocate Intern
+          </button>
+        )}
       </div>
     </div>
   );
@@ -820,6 +827,7 @@ export default function ProjectsPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
+  const isManager = useIsManager();
   const { showToast, ToastComponent } = useToast();
 
   const fetchAllocations = useCallback(async () => {
@@ -875,13 +883,15 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold text-slate-100">Projects</h1>
           <p className="text-sm text-slate-500 mt-1">{projects.length} projects</p>
         </div>
-        <button
-          onClick={() => setPanelOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shrink-0"
-        >
-          <span className="text-base leading-none">+</span>
-          New Project
-        </button>
+        {isManager && (
+          <button
+            onClick={() => setPanelOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shrink-0"
+          >
+            <span className="text-base leading-none">+</span>
+            New Project
+          </button>
+        )}
       </div>
 
       {error ? (
@@ -906,6 +916,7 @@ export default function ProjectsPage() {
                 index={i}
                 onAllocate={setModalProject}
                 onEdit={setEditingProject}
+                isManager={isManager}
               />
             ))}
             {filtered.length === 0 && (
@@ -917,16 +928,18 @@ export default function ProjectsPage() {
         </>
       )}
 
-      <NewProjectPanel
-        open={panelOpen}
-        onClose={() => setPanelOpen(false)}
-        onCreated={(p) => {
-          setProjects((prev) => [p, ...prev]);
-          showToast("Project created successfully", "success");
-        }}
-      />
+      {isManager && (
+        <NewProjectPanel
+          open={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          onCreated={(p) => {
+            setProjects((prev) => [p, ...prev]);
+            showToast("Project created successfully", "success");
+          }}
+        />
+      )}
 
-      {modalProject && (
+      {isManager && modalProject && (
         <AllocateModal
           project={modalProject}
           interns={interns}
@@ -944,7 +957,7 @@ export default function ProjectsPage() {
         />
       )}
 
-      {editingProject && (
+      {isManager && editingProject && (
         <EditProjectPanel
           project={editingProject}
           open={!!editingProject}

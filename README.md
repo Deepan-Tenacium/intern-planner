@@ -1,12 +1,12 @@
 # Intern Resource Planner
 
-A web app for managers to track intern skills, availability, and project allocations.
+A web app for managers to track intern skills, availability, and project allocations — with role-based access control so interns can view but not edit.
 
 ---
 
 ## What is this?
 
-Intern Resource Planner is an internal tool built for Tenacium DC to help managers oversee their intern cohorts. It gives a real-time view of who is working on what, how many hours each intern has allocated, and which projects are running. Managers can create and manage interns, projects, and allocations — all from one place.
+Intern Resource Planner is an internal tool built for Tenacium DC to help managers oversee their intern cohorts. It gives a real-time view of who is working on what, how many hours each intern has allocated, and which projects are running. Managers have full CRUD access; interns get a read-only view of all the same data.
 
 ---
 
@@ -22,10 +22,35 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 | **Next.js 14** | React frontend with App Router |
 | **TypeScript** | Type-safe frontend code |
 | **Tailwind CSS** | Utility-first styling |
+| **NextAuth.js** | Session management — credentials login + GitHub OAuth |
+| **JWT (python-jose)** | Backend token issuance and verification |
 | **Docker Compose** | Runs API, frontend, and database together |
 | **Playwright** | End-to-end browser testing framework |
 | **Claude Code** | AI pair programmer used to build the project |
 | **GitHub** | Version control at [github.com/Deepan-Tenacium/intern-planner](https://github.com/Deepan-Tenacium/intern-planner) |
+
+---
+
+## Authentication & Roles
+
+The app uses JWT-based authentication with two roles:
+
+| Role | Access |
+|---|---|
+| **manager** | Full read + write access — can create, edit, and delete interns, projects, allocations, and skills |
+| **intern** | Read-only — all pages and data are visible but all create/edit/delete controls are hidden |
+
+### Login methods
+
+- **Credentials** — email + password via `/auth/login`
+- **GitHub OAuth** — via `/auth/github` (new GitHub users are created with the `intern` role by default)
+
+### How it works
+
+1. On login the API issues a signed JWT containing `email`, `role`, and `user_id`.
+2. NextAuth stores the token in the session and forwards it as a `Bearer` header on every proxied API request.
+3. The backend enforces `require_manager` on all write endpoints (POST, PATCH, DELETE) — so even if the UI were bypassed, the API would return 403.
+4. The frontend reads `session.user.role` via a `useIsManager()` hook and conditionally renders all write controls.
 
 ---
 
@@ -36,36 +61,33 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 - Active projects panel with timeline progress bars
 - Workload snapshot showing each intern's allocated vs. capacity hours
 - Recent allocations feed
-- Cohort overview with colour-coded donut charts (green / amber / red load status)
+- Cohort overview with colour-coded load status (green / amber / red)
 
 ### Interns (`/interns`)
 - Grid of intern cards showing name, email, cohort dates, weekly capacity, and skills with proficiency levels
 - Colour-coded load indicator dot (green = available, amber = at capacity, red = overloaded)
-- Summary stats bar at the top
-- "New Intern" button opens a slide-in panel from the right
-- Form fields: name, email, cohort dates, weekly capacity
-- Skills section: checkbox per skill with proficiency dot selector (1–5)
-- Validates required fields before submitting
-- New intern appears in the grid instantly without page reload
+- Filter bar: All / Active / On Leave / Finished
+- **Managers only:** "New Intern" slide-in panel with inline validation and skill assignment
 
 ### Intern Detail (`/interns/[id]`)
-- Full profile for a single intern
-- Skills breakdown with categories and proficiency ratings
-- List of current project allocations
+- Full profile: avatar, status badge, stat cards (cohort dates, capacity, current load)
+- Skills section with proficiency dots by category
+- Workload ring chart showing % allocated
+- Current allocation cards with per-project breakdown
+- 8-week availability calendar
+- **Managers only:** "Edit" button to update intern details, "Edit Skills" panel to add/remove/adjust proficiency
 
 ### Projects (`/projects`)
-- List of all projects with status, owner, date range, and required skills
-- Create, edit, and delete projects
-- Filter bar at top: All / Active / Planning / Completed with live counts per status
-- Expandable cards: click "View Details" to see full description, allocated interns, and total hours
-- Pulsing green dot indicator on active projects
-- Timeline progress bar showing how far through the project we are today
-- "Allocate Intern" button opens a modal: intern selector with current load shown, overload warning if intern already over 30 h/week, hours per week and date range inputs
-- "New Project" button opens a slide-in panel with full form and inline validation
+- Filter bar: All / Active / Planning / Completed with live counts
+- Expandable cards: status badge, timeline progress bar, allocated interns list
+- Pulsing green dot on active projects
+- **Managers only:** edit pencil per card, "New Project" slide-in panel, "Allocate Intern" modal (with overload warning if intern exceeds 30 h/week)
 
 ### Allocations (`/allocations`)
-- Table of all intern–project assignments
-- Create, edit, and delete allocations with hours-per-week and date range
+- Table of all intern–project assignments with hours/week and date range
+- Expandable rows showing all projects for that intern and their total load
+- Search by intern or project name, filter by project, filter by load band
+- **Managers only:** "Add Allocation" modal, inline edit and delete per row
 
 ### Workload (`/workload`)
 - Full workload table sorted by load status (overloaded first)
@@ -79,8 +101,8 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 - Professional dark theme throughout (`#0f1117`)
 - Fixed left sidebar (240 px) with inline SVG icons
 - Active nav link highlighted in indigo
-- Slide-in panels from the right for creating interns and projects
-- Modal overlays for allocating interns
+- Slide-in panels from the right for create/edit forms
+- Modal overlays for allocations
 - Toast notifications — green for success, red for errors, auto-dismiss after 3 seconds
 - Staggered card fade-in animations on page load
 - Hover glow effects on all interactive cards
@@ -108,13 +130,43 @@ docker compose up --build
 # 3. Run database migrations
 docker compose exec api alembic upgrade head
 
-# 4. Seed demo data
+# 4. Seed demo data (creates 2 users, 8 interns, 8 skills, 5 projects, 10 allocations)
 docker compose exec api python seed.py
 
 # 5. Open the app
 # Frontend → http://localhost:3000
 # API docs  → http://localhost:8000/docs
 ```
+
+Log in with one of the demo accounts above, or register a new account at `/login`.
+
+---
+
+## API Endpoints
+
+| Method | Path | Auth required |
+|---|---|---|
+| GET | `/interns/` | Any logged-in user |
+| POST | `/interns/` | Manager only |
+| PATCH | `/interns/{id}` | Manager only |
+| DELETE | `/interns/{id}` | Manager only |
+| POST | `/interns/{id}/skills` | Manager only |
+| PATCH | `/interns/{id}/skills/{skill_id}` | Manager only |
+| DELETE | `/interns/{id}/skills/{skill_id}` | Manager only |
+| GET | `/projects/` | Any logged-in user |
+| POST | `/projects/` | Manager only |
+| PATCH | `/projects/{id}` | Manager only |
+| DELETE | `/projects/{id}` | Manager only |
+| GET | `/allocations/` | Any logged-in user |
+| POST | `/allocations/` | Manager only |
+| PATCH | `/allocations/{id}` | Manager only |
+| DELETE | `/allocations/{id}` | Manager only |
+| GET | `/skills/` | Any logged-in user |
+| POST | `/auth/register` | Public |
+| POST | `/auth/login` | Public |
+| GET | `/auth/github` | Public |
+| GET | `/auth/me` | Any logged-in user |
+| GET | `/health` | Public |
 
 ---
 
@@ -207,22 +259,32 @@ intern-planner/
 ├── apps/
 │   ├── api/                    # FastAPI backend
 │   │   ├── app/
-│   │   │   ├── models.py       # SQLAlchemy ORM models
+│   │   │   ├── models.py       # SQLAlchemy ORM models (User, Intern, Project, Allocation, Skill)
 │   │   │   ├── schemas.py      # Pydantic request/response schemas
 │   │   │   ├── database.py     # DB session and engine setup
-│   │   │   └── routers/        # Route handlers (interns, projects, allocations)
+│   │   │   ├── auth.py         # JWT helpers, get_current_user, require_manager
+│   │   │   └── routers/        # Route handlers (auth, interns, projects, allocations, skills)
 │   │   ├── alembic/            # Database migration scripts
-│   │   ├── seed.py             # Demo data loader
+│   │   ├── seed.py             # Demo data loader (2 users, 8 interns, 5 projects, 10 allocations)
 │   │   └── requirements.txt
 │   │
 │   └── web/                    # Next.js frontend
 │       └── app/
-│           ├── page.tsx         # Dashboard
-│           ├── interns/         # Interns list + detail pages
-│           ├── projects/        # Projects page
-│           ├── allocations/     # Allocations page
-│           ├── workload/        # Workload page
-│           └── components/      # Shared UI (Sidebar, NavLink)
+│           ├── page.tsx              # Dashboard
+│           ├── interns/              # Interns list + detail pages
+│           ├── projects/             # Projects page
+│           ├── allocations/          # Allocations page
+│           ├── workload/             # Workload page
+│           ├── login/                # Login page (credentials + GitHub OAuth)
+│           ├── hooks/
+│           │   └── useRole.ts        # useIsManager() hook for role-based UI
+│           ├── components/           # Shared UI (AppShell, Sidebar, NavLink, Toast)
+│           └── api/
+│               ├── auth/             # NextAuth route (credentials + GitHub provider)
+│               └── proxy/            # Proxy route — forwards requests to API with Bearer token
+│
+├── .claude/
+│   └── skills/                 # Claude Code custom skill files
 │
 ├── infra/
 │   ├── api.Dockerfile

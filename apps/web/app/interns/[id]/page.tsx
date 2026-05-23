@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { Allocation, Intern, Project, Skill } from "../../types";
 import { useToast } from "../../components/Toast";
+import { useIsManager } from "../../hooks/useRole";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -859,6 +860,7 @@ export default function InternProfilePage({ params }: { params: { id: string } }
   const [editOpen, setEditOpen] = useState(false);
   const [editSkillsOpen, setEditSkillsOpen] = useState(false);
 
+  const isManager = useIsManager();
   const { showToast, ToastComponent } = useToast();
 
   useEffect(() => {
@@ -932,14 +934,16 @@ export default function InternProfilePage({ params }: { params: { id: string } }
           >
             ← Interns
           </Link>
-          <button
-            onClick={() => setEditOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:border-indigo-500 transition-all"
-            style={{ border: "1px solid #2a2d3a" }}
-          >
-            <IconPencil />
-            Edit
-          </button>
+          {isManager && (
+            <button
+              onClick={() => setEditOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:border-indigo-500 transition-all"
+              style={{ border: "1px solid #2a2d3a" }}
+            >
+              <IconPencil />
+              Edit
+            </button>
+          )}
         </div>
 
         {/* ── Hero header ── */}
@@ -1016,14 +1020,16 @@ export default function InternProfilePage({ params }: { params: { id: string } }
               <SectionHeader
                 label="Skills"
                 action={
-                  <button
-                    onClick={() => setEditSkillsOpen(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:border-indigo-500 transition-all"
-                    style={{ border: "1px solid #2a2d3a" }}
-                  >
-                    <IconPencil />
-                    Edit Skills
-                  </button>
+                  isManager ? (
+                    <button
+                      onClick={() => setEditSkillsOpen(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:border-indigo-500 transition-all"
+                      style={{ border: "1px solid #2a2d3a" }}
+                    >
+                      <IconPencil />
+                      Edit Skills
+                    </button>
+                  ) : undefined
                 }
               />
 
@@ -1146,23 +1152,24 @@ export default function InternProfilePage({ params }: { params: { id: string } }
 
       </div>
 
-      {/* Edit Intern Panel */}
-      <EditInternPanel
-        intern={intern}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        onUpdated={(updated) => setIntern(updated)}
-        showToast={showToast}
-      />
-
-      {/* Edit Skills Panel */}
-      <EditSkillsPanel
-        intern={intern}
-        open={editSkillsOpen}
-        onClose={() => setEditSkillsOpen(false)}
-        onUpdated={(updated) => setIntern(updated)}
-        showToast={showToast}
-      />
+      {isManager && (
+        <>
+          <EditInternPanel
+            intern={intern}
+            open={editOpen}
+            onClose={() => setEditOpen(false)}
+            onUpdated={(updated) => setIntern(updated)}
+            showToast={showToast}
+          />
+          <EditSkillsPanel
+            intern={intern}
+            open={editSkillsOpen}
+            onClose={() => setEditSkillsOpen(false)}
+            onUpdated={(updated) => setIntern(updated)}
+            showToast={showToast}
+          />
+        </>
+      )}
     </>
   );
 }

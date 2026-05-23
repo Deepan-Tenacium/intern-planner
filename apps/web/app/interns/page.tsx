@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Allocation, Intern, Project, Skill } from "../types";
 import { getLoadStatus, loadColors } from "../lib/workload";
 import { useToast } from "../components/Toast";
+import { useIsManager } from "../hooks/useRole";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -467,6 +468,7 @@ export default function InternsPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  const isManager = useIsManager();
   const { showToast, ToastComponent } = useToast();
 
   useEffect(() => {
@@ -515,13 +517,15 @@ export default function InternsPage() {
           <h1 className="text-2xl font-bold text-slate-100">Interns</h1>
           <p className="text-sm text-slate-500 mt-1">Overview of your intern cohort</p>
         </div>
-        <button
-          onClick={() => setPanelOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shrink-0"
-        >
-          <span className="text-base leading-none">+</span>
-          New Intern
-        </button>
+        {isManager && (
+          <button
+            onClick={() => setPanelOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shrink-0"
+          >
+            <span className="text-base leading-none">+</span>
+            New Intern
+          </button>
+        )}
       </div>
 
       {error ? (
@@ -573,14 +577,16 @@ export default function InternsPage() {
         </>
       )}
 
-      <NewInternPanel
-        open={panelOpen}
-        onClose={() => setPanelOpen(false)}
-        onCreated={(newIntern) => {
-          setInterns((prev) => [newIntern, ...prev]);
-          showToast("Intern added successfully", "success");
-        }}
-      />
+      {isManager && (
+        <NewInternPanel
+          open={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          onCreated={(newIntern) => {
+            setInterns((prev) => [newIntern, ...prev]);
+            showToast("Intern added successfully", "success");
+          }}
+        />
+      )}
     </div>
   );
 }

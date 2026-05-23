@@ -3,6 +3,7 @@
 import { useEffect, useState, Fragment } from "react";
 import type { Allocation, Intern, Project } from "../types";
 import { useToast } from "../components/Toast";
+import { useIsManager } from "../hooks/useRole";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -445,6 +446,7 @@ export default function AllocationsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
 
+  const isManager = useIsManager();
   const { showToast, ToastComponent } = useToast();
 
   useEffect(() => {
@@ -548,14 +550,16 @@ export default function AllocationsPage() {
           <h1 className="text-2xl font-bold text-slate-100">Allocations</h1>
           <p className="text-sm text-slate-500 mt-1">{allocations.length} allocations</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{ backgroundColor: "#6366f1" }}
-        >
-          <IconPlus />
-          Add Allocation
-        </button>
+        {isManager && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ backgroundColor: "#6366f1" }}
+          >
+            <IconPlus />
+            Add Allocation
+          </button>
+        )}
       </div>
 
       {/* Summary bar */}
@@ -623,7 +627,7 @@ export default function AllocationsPage() {
               <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Hrs / wk</th>
               <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Start</th>
               <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">End</th>
-              <th className="px-4 py-3 w-24"></th>
+              {isManager && <th className="px-4 py-3 w-24"></th>}
             </tr>
           </thead>
           <tbody>
@@ -692,42 +696,44 @@ export default function AllocationsPage() {
                     <td className="px-4 py-3 text-slate-500">{fmtDate(a.end_date)}</td>
 
                     {/* Actions */}
-                    <td className="px-4 py-3" data-no-expand="true">
-                      {isConfirming ? (
-                        <div className="flex items-center gap-1 text-xs">
-                          <span className="text-slate-400">Sure?</span>
-                          <button
-                            onClick={() => handleDelete(a.id)}
-                            className="px-2 py-0.5 rounded text-red-400 hover:bg-red-500/10 transition-colors font-medium"
-                          >
-                            Yes
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-0.5 rounded text-slate-400 hover:bg-white/5 transition-colors"
-                          >
-                            No
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setEditingAllocation(a)}
-                            className="text-slate-600 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-indigo-500/10"
-                            title="Edit allocation"
-                          >
-                            <IconPencil />
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(a.id)}
-                            className="text-slate-600 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10"
-                            title="Remove allocation"
-                          >
-                            <IconTrash />
-                          </button>
-                        </div>
-                      )}
-                    </td>
+                    {isManager && (
+                      <td className="px-4 py-3" data-no-expand="true">
+                        {isConfirming ? (
+                          <div className="flex items-center gap-1 text-xs">
+                            <span className="text-slate-400">Sure?</span>
+                            <button
+                              onClick={() => handleDelete(a.id)}
+                              className="px-2 py-0.5 rounded text-red-400 hover:bg-red-500/10 transition-colors font-medium"
+                            >
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="px-2 py-0.5 rounded text-slate-400 hover:bg-white/5 transition-colors"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setEditingAllocation(a)}
+                              className="text-slate-600 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-indigo-500/10"
+                              title="Edit allocation"
+                            >
+                              <IconPencil />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(a.id)}
+                              className="text-slate-600 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10"
+                              title="Remove allocation"
+                            >
+                              <IconTrash />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )}
                   </tr>
 
                   {/* Expanded row: intern total load */}
@@ -785,7 +791,7 @@ export default function AllocationsPage() {
       </div>
 
       {/* Add Allocation Modal */}
-      {showModal && (
+      {isManager && showModal && (
         <AddAllocationModal
           interns={interns}
           projects={projects}
@@ -797,7 +803,7 @@ export default function AllocationsPage() {
       )}
 
       {/* Edit Allocation Panel */}
-      {editingAllocation && (
+      {isManager && editingAllocation && (
         <EditAllocationPanel
           allocation={editingAllocation}
           internName={internMap.get(editingAllocation.intern_id)?.name ?? `Intern #${editingAllocation.intern_id}`}
