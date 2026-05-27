@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,9 +9,11 @@ from app.routers.auth import router as auth_router
 
 app = FastAPI(title="Intern Resource Planner")
 
+CORS_ORIGIN = os.getenv("CORS_ORIGIN", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[CORS_ORIGIN],
     allow_methods=["*"],
     allow_headers=["*"],
 )

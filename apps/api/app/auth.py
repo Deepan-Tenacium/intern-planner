@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas import TokenData
 
-JWT_SECRET = os.getenv("JWT_SECRET", "changeme")
+JWT_SECRET = os.environ["JWT_SECRET"]
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 24
 
