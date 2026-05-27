@@ -6,6 +6,18 @@ export function getLoadStatus(allocatedHours: number): LoadStatus {
   return "green";
 }
 
+export const statusHex: Record<LoadStatus, string> = {
+  green: "#22c55e",
+  amber: "#fbbf24",
+  red:   "#ef4444",
+};
+
+export const statusBgHex: Record<LoadStatus, string> = {
+  green: "rgba(34,197,94,0.15)",
+  amber: "rgba(251,191,36,0.15)",
+  red:   "rgba(239,68,68,0.15)",
+};
+
 export const loadColors: Record<LoadStatus, { dot: string; bar: string; text: string }> = {
   green: {
     dot: "bg-green-500",

@@ -64,11 +64,11 @@ export const authOptions: NextAuthOptions = {
         // If backend returns a token, store it on the user object
         if (res.ok) {
           const { access_token } = await res.json();
-          (user as any).backendToken = access_token;
+          user.backendToken = access_token;
           const payload = JSON.parse(
             Buffer.from(access_token.split(".")[1], "base64url").toString()
           );
-          (user as any).role = payload.role;
+          user.role = payload.role;
         }
         // Allow sign in even if backend call failed — the session will just
         // lack a backendToken; the user will hit auth errors on API calls
@@ -78,16 +78,16 @@ export const authOptions: NextAuthOptions = {
 
     async jwt({ token, user, account }) {
       if (user) {
-        token.role = (user as any).role;
-        token.backendToken = (user as any).backendToken;
+        token.role = user.role;
+        token.backendToken = user.backendToken;
       }
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).backendToken = token.backendToken;
+        session.user.role = token.role;
+        session.user.backendToken = token.backendToken;
       }
       return session;
     },

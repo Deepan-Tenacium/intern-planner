@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { INTERNAL_API_URL } from "../../../lib/api";
+import type { Session } from "next-auth";
 
-const API_URL = process.env.INTERNAL_API_URL ?? "http://api:8000";
-
-function authHeader(session: Awaited<ReturnType<typeof getServerSession>>) {
-  const token = (session?.user as any)?.backendToken;
+function authHeader(session: Session | null): Record<string, string> {
+  const token = session?.user?.backendToken;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -17,7 +17,7 @@ export async function GET(
 
   const path = params.path.join("/");
   const url = new URL(request.url);
-  const res = await fetch(`${API_URL}/${path}${url.search}`, {
+  const res = await fetch(`${INTERNAL_API_URL}/${path}${url.search}`, {
     headers: {
       "Content-Type": "application/json",
       ...authHeader(session),
@@ -37,7 +37,7 @@ export async function POST(
 
   const path = params.path.join("/");
   const body = await request.json();
-  const res = await fetch(`${API_URL}/${path}`, {
+  const res = await fetch(`${INTERNAL_API_URL}/${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -59,7 +59,7 @@ export async function PATCH(
 
   const path = params.path.join("/");
   const body = await request.json();
-  const res = await fetch(`${API_URL}/${path}`, {
+  const res = await fetch(`${INTERNAL_API_URL}/${path}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -80,7 +80,7 @@ export async function DELETE(
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   const path = params.path.join("/");
-  const res = await fetch(`${API_URL}/${path}`, {
+  const res = await fetch(`${INTERNAL_API_URL}/${path}`, {
     method: "DELETE",
     headers: authHeader(session),
   });

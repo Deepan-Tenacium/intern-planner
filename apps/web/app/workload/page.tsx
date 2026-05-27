@@ -10,8 +10,8 @@ async function fetchData(token: string) {
   };
   const API = process.env.INTERNAL_API_URL ?? "http://api:8000";
   const [iRes, aRes] = await Promise.all([
-    fetch(`${API}/interns/`, { cache: "no-store", headers }),
-    fetch(`${API}/allocations/`, { cache: "no-store", headers }),
+    fetch(`${API}/interns/`, { headers, next: { revalidate: 30 } }),
+    fetch(`${API}/allocations/`, { headers, next: { revalidate: 30 } }),
   ]);
   if (iRes.status === 401 || iRes.status === 403) throw new Error("AUTH");
   if (!iRes.ok || !aRes.ok) throw new Error("API");
@@ -39,7 +39,7 @@ export default async function WorkloadPage() {
   let error: string | null = null;
 
   const session = await getServerSession(authOptions);
-  const token = (session?.user as any)?.backendToken ?? "";
+  const token = session?.user?.backendToken ?? "";
 
   try {
     ({ interns, allocations } = await fetchData(token));
