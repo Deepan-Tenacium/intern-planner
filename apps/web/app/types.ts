@@ -13,7 +13,7 @@ export interface Project {
   id: number;
   name: string;
   description: string | null;
-  status: string;
+  status: "active" | "planning" | "completed";
   owner: string;
   start_date: string;
   end_date: string;
@@ -35,6 +35,6 @@ export interface Intern {
   cohort_start: string;
   cohort_end: string;
   weekly_capacity_hours: number;
-  status: string;
+  status: "active" | "on_leave" | "finished";
   skills: InternSkill[];
 }

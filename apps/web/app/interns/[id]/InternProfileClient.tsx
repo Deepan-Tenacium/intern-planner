@@ -8,7 +8,7 @@ import { useIsManager } from "../../hooks/useRole";
 import { statusHex, statusBgHex } from "../../lib/workload";
 import type { LoadStatus } from "../../lib/workload";
 import { formatDate, initials, skillCategoryColors, skillCategoryFallback } from "../../lib/utils";
-import { inputCls, inputStyle } from "../../lib/forms";
+import { inputCls, inputStyle, colors } from "../../lib/forms";
 import { IconPencil } from "../../components/Icons";
 
 interface Props {
@@ -113,7 +113,7 @@ function StatCard({
       className="rounded-xl p-4 flex flex-col gap-2 animate-fade-in"
       style={{
         background: "#1a1d27",
-        border: "1px solid #2a2d3a",
+        border: `1px solid ${colors.border}`,
         animationDelay: `${delay}ms`,
         animationFillMode: "both",
       }}
@@ -154,7 +154,7 @@ function ClickableProficiencyDots({ level, onChange }: { level: number; onChange
             width: 10,
             height: 10,
             borderRadius: "50%",
-            background: i < level ? "#6366f1" : "#2a2d3a",
+            background: i < level ? colors.indigo : colors.border,
             border: "none",
             cursor: "pointer",
             padding: 0,
@@ -185,7 +185,7 @@ function LoadRing({
   }, [rawPct]);
 
   const color = statusHex[status];
-  const track = "#2a2d3a";
+  const track = colors.border;
   const size = 120;
   const thickness = 14;
   const inner = size - thickness * 2;
@@ -330,7 +330,7 @@ function EditInternPanel({
           height: "100vh",
           width: 440,
           background: "#1a1d27",
-          borderLeft: "1px solid #2a2d3a",
+          borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease",
@@ -338,7 +338,7 @@ function EditInternPanel({
           flexDirection: "column",
         }}
       >
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #2a2d3a" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
           <h2 className="text-sm font-semibold text-slate-100">Edit Intern</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-200 text-lg leading-none">✕</button>
         </div>
@@ -418,12 +418,12 @@ function EditInternPanel({
               </select>
             </div>
 
-            <div className="flex gap-3 pt-2" style={{ borderTop: "1px solid #2a2d3a", paddingTop: 16 }}>
+            <div className="flex gap-3 pt-2" style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 16 }}>
               <button
                 type="button"
                 onClick={onClose}
                 className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
-                style={{ border: "1px solid #2a2d3a" }}
+                style={{ border: `1px solid ${colors.border}` }}
               >
                 Cancel
               </button>
@@ -559,7 +559,7 @@ function EditSkillsPanel({
           height: "100vh",
           width: 440,
           background: "#1a1d27",
-          borderLeft: "1px solid #2a2d3a",
+          borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease",
@@ -567,7 +567,7 @@ function EditSkillsPanel({
           flexDirection: "column",
         }}
       >
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #2a2d3a" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
           <h2 className="text-sm font-semibold text-slate-100">Edit Skills</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-200 text-lg leading-none">✕</button>
         </div>
@@ -610,7 +610,7 @@ function EditSkillsPanel({
 
               {newSkills.length > 0 && (
                 <>
-                  <div style={{ borderTop: "1px solid #2a2d3a", margin: "12px 0" }} />
+                  <div style={{ borderTop: `1px solid ${colors.border}`, margin: "12px 0" }} />
                   <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">Add New Skills</p>
                   {newSkills.map((skill) => {
                     const state = skillState[skill.id];
@@ -643,12 +643,12 @@ function EditSkillsPanel({
           )}
         </div>
 
-        <div className="flex gap-3 px-6 py-4" style={{ borderTop: "1px solid #2a2d3a" }}>
+        <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${colors.border}` }}>
           <button
             type="button"
             onClick={onClose}
             className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
-            style={{ border: "1px solid #2a2d3a" }}
+            style={{ border: `1px solid ${colors.border}` }}
           >
             Cancel
           </button>
@@ -721,7 +721,7 @@ function AvailabilityCalendar({
   return (
     <div
       className="rounded-xl p-5 animate-fade-in"
-      style={{ background: "#1a1d27", border: "1px solid #2a2d3a", animationDelay: "400ms", animationFillMode: "both" }}
+      style={{ background: "#1a1d27", border: `1px solid ${colors.border}`, animationDelay: "400ms", animationFillMode: "both" }}
     >
       <SectionHeader label="Availability — Next 8 Weeks" />
 
@@ -859,7 +859,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
             <button
               onClick={() => setEditOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:border-indigo-500 transition-all"
-              style={{ border: "1px solid #2a2d3a" }}
+              style={{ border: `1px solid ${colors.border}` }}
             >
               <IconPencil />
               Edit
@@ -870,14 +870,14 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
         {/* ── Hero header ── */}
         <div
           className="rounded-2xl p-6 animate-fade-in"
-          style={{ background: "#1a1d27", border: "1px solid #2a2d3a" }}
+          style={{ background: "#1a1d27", border: `1px solid ${colors.border}` }}
         >
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
               style={{
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                background: `linear-gradient(135deg, ${colors.indigo} 0%, #a855f7 100%)`,
                 boxShadow: "0 0 0 3px rgba(99,102,241,0.25), 0 8px 24px rgba(99,102,241,0.2)",
               }}
             >
@@ -936,7 +936,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
           <div className="flex-[3] min-w-0">
             <div
               className="rounded-xl p-5 animate-fade-in"
-              style={{ background: "#1a1d27", border: "1px solid #2a2d3a", animationDelay: "200ms", animationFillMode: "both" }}
+              style={{ background: "#1a1d27", border: `1px solid ${colors.border}`, animationDelay: "200ms", animationFillMode: "both" }}
             >
               <SectionHeader
                 label="Skills"
@@ -945,7 +945,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
                     <button
                       onClick={() => setEditSkillsOpen(true)}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:border-indigo-500 transition-all"
-                      style={{ border: "1px solid #2a2d3a" }}
+                      style={{ border: `1px solid ${colors.border}` }}
                     >
                       <IconPencil />
                       Edit Skills
@@ -990,7 +990,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
             {/* Load ring card */}
             <div
               className="rounded-xl p-5 animate-fade-in"
-              style={{ background: "#1a1d27", border: "1px solid #2a2d3a", animationDelay: "250ms", animationFillMode: "both" }}
+              style={{ background: "#1a1d27", border: `1px solid ${colors.border}`, animationDelay: "250ms", animationFillMode: "both" }}
             >
               <SectionHeader label="Current Workload" />
               <div className="flex justify-center py-2">
@@ -1015,7 +1015,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
             {/* Allocations card */}
             <div
               className="rounded-xl p-5 animate-fade-in"
-              style={{ background: "#1a1d27", border: "1px solid #2a2d3a", animationDelay: "330ms", animationFillMode: "both" }}
+              style={{ background: "#1a1d27", border: `1px solid ${colors.border}`, animationDelay: "330ms", animationFillMode: "both" }}
             >
               <SectionHeader label="Allocations" />
 
@@ -1034,7 +1034,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
                         key={a.id}
                         className="rounded-lg p-3 flex items-start justify-between gap-3 animate-fade-in"
                         style={{
-                          background: "#0f1117",
+                          background: colors.bg,
                           borderLeft: `3px solid ${statusHex[contribStatus]}`,
                           animationDelay: `${400 + i * 80}ms`,
                           animationFillMode: "both",

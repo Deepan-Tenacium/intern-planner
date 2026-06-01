@@ -35,7 +35,12 @@ def create_allocation(body: schemas.AllocationCreate, db: Session = Depends(get_
 
 
 @router.patch("/{allocation_id}", response_model=schemas.AllocationOut)
-def update_allocation(allocation_id: int, body: schemas.AllocationUpdate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
+def update_allocation(
+    allocation_id: int,
+    body: schemas.AllocationUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+):
     allocation = db.get(models.Allocation, allocation_id)
     if not allocation:
         raise HTTPException(status_code=404, detail="Allocation not found")

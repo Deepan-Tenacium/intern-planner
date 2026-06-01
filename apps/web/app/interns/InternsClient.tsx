@@ -7,7 +7,7 @@ import { getLoadStatus, loadColors } from "../lib/workload";
 import { useToast } from "../components/Toast";
 import { useIsManager } from "../hooks/useRole";
 import { formatDate, skillCategoryColors, skillCategoryFallback } from "../lib/utils";
-import { inputCls, inputStyle, inputErrorStyle } from "../lib/forms";
+import { inputCls, inputStyle, inputErrorStyle, colors } from "../lib/forms";
 
 interface Props {
   initialInterns: Intern[];
@@ -158,7 +158,7 @@ function ProficiencyDots({
             width: 14,
             height: 14,
             borderRadius: "50%",
-            background: n <= value ? "#6366f1" : "#2a2d3a",
+            background: n <= value ? colors.indigo : colors.border,
             border: "none",
             cursor: "pointer",
             padding: 0,
@@ -274,7 +274,7 @@ function NewInternPanel({
           height: "100vh",
           width: 440,
           background: "#1a1d27",
-          borderLeft: "1px solid #2a2d3a",
+          borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease",
@@ -285,7 +285,7 @@ function NewInternPanel({
         {/* header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: "1px solid #2a2d3a" }}
+          style={{ borderBottom: `1px solid ${colors.border}` }}
         >
           <h2 className="text-sm font-semibold text-slate-100">Add New Intern</h2>
           <button
@@ -365,7 +365,7 @@ function NewInternPanel({
           </div>
 
           {/* skills divider */}
-          <div style={{ borderTop: "1px solid #2a2d3a", paddingTop: 16 }}>
+          <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 16 }}>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4">Skills</p>
 
             {skills.length === 0 ? (
@@ -412,12 +412,12 @@ function NewInternPanel({
         {/* footer */}
         <div
           className="flex gap-3 px-6 py-4"
-          style={{ borderTop: "1px solid #2a2d3a" }}
+          style={{ borderTop: `1px solid ${colors.border}` }}
         >
           <button
             onClick={handleCancel}
             className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
-            style={{ border: "1px solid #2a2d3a" }}
+            style={{ border: `1px solid ${colors.border}` }}
           >
             Cancel
           </button>
@@ -496,7 +496,7 @@ export default function InternsClient({ initialInterns, initialAllocations, init
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-slate-200"
               }`}
-              style={statusFilter !== s ? { border: "1px solid #2a2d3a" } : {}}
+              style={statusFilter !== s ? { border: `1px solid ${colors.border}` } : {}}
             >
               {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>

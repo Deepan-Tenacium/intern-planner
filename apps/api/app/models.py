@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, Date, DateTime, ForeignKey, UniqueConstraint
 )
@@ -15,7 +15,7 @@ class User(Base):
     name = Column(String, nullable=False)
     role = Column(String, nullable=False, default="intern")
     github_id = Column(String, unique=True, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class Intern(Base):

@@ -31,7 +31,12 @@ def create_project(body: schemas.ProjectCreate, db: Session = Depends(get_db), c
 
 
 @router.patch("/{project_id}", response_model=schemas.ProjectOut)
-def update_project(project_id: int, body: schemas.ProjectUpdate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
+def update_project(
+    project_id: int,
+    body: schemas.ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+):
     project = db.get(models.Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")

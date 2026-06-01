@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 from pydantic import BaseModel, EmailStr
 
 
@@ -8,7 +9,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
-    role: str = "intern"
+    role: Literal["intern", "manager"] = "intern"
 
 
 class UserLogin(BaseModel):
@@ -81,7 +82,7 @@ class InternUpdate(BaseModel):
     cohort_start: date | None = None
     cohort_end: date | None = None
     weekly_capacity_hours: int | None = None
-    status: str | None = None
+    status: Literal["active", "on_leave", "finished"] | None = None
 
 
 class InternOut(BaseModel):
@@ -111,7 +112,7 @@ class ProjectSkillOut(BaseModel):
 class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
-    status: str = "active"
+    status: Literal["active", "planning", "completed"] = "active"
     owner: str
     start_date: date
     end_date: date
@@ -120,7 +121,7 @@ class ProjectCreate(BaseModel):
 class ProjectUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
-    status: str | None = None
+    status: Literal["active", "planning", "completed"] | None = None
     owner: str | None = None
     start_date: date | None = None
     end_date: date | None = None

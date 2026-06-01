@@ -7,7 +7,8 @@ import { useToast } from "./components/Toast";
 import { getLoadStatus, statusHex, statusBgHex } from "./lib/workload";
 import type { LoadStatus } from "./lib/workload";
 import { initials, formatDateShort } from "./lib/utils";
-import { IconTrash } from "./components/Icons";
+import { colors } from "./lib/forms";
+import { IconTrash, IconPerson, IconFolder, IconCalendar, IconWarning, IconClock } from "./components/Icons";
 
 interface Props {
   initialInterns: Intern[];
@@ -18,7 +19,7 @@ interface Props {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const avatarPalette = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#14b8a6",
+  colors.indigo, "#8b5cf6", "#ec4899", "#14b8a6",
   "#f59e0b", "#3b82f6", "#10b981", "#f43f5e",
 ];
 
@@ -56,41 +57,6 @@ function useCountUp(target: number, duration = 900): number {
   return val;
 }
 
-// ── Icons (inline SVG) ────────────────────────────────────────────────────────
-
-const IconPerson = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="6" r="4" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M2 18c0-4.418 3.582-7 8-7s8 2.582 8 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-const IconFolder = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M2 5.5C2 4.672 2.672 4 3.5 4H8l2 2.5h6.5C17.328 6.5 18 7.172 18 8v8.5C18 17.328 17.328 18 16.5 18h-13C2.672 18 2 17.328 2 16.5V5.5z" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-);
-const IconCalendar = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M2 8h16" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M7 2v3M13 2v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <rect x="5" y="11" width="2.5" height="2.5" rx="0.5" fill="currentColor" />
-    <rect x="8.75" y="11" width="2.5" height="2.5" rx="0.5" fill="currentColor" />
-    <rect x="12.5" y="11" width="2.5" height="2.5" rx="0.5" fill="currentColor" />
-  </svg>
-);
-const IconWarning = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M9.134 3.527c.39-.703 1.342-.703 1.732 0l6.598 11.878C17.847 16.1 17.376 17 16.598 17H3.402c-.778 0-1.249-.9-.866-1.595L9.134 3.527z" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M10 8v4M10 13.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-const IconClock = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 // ── Stat Tile ─────────────────────────────────────────────────────────────────
 
 function StatTile({
@@ -109,18 +75,18 @@ function StatTile({
       style={{
         animationDelay: `${delay}ms`,
         backgroundColor: isRed ? "rgba(239,68,68,0.08)" : "rgba(99,102,241,0.06)",
-        borderColor: isRed ? "rgba(239,68,68,0.3)" : "#2a2d3a",
+        borderColor: isRed ? "rgba(239,68,68,0.3)" : colors.border,
       }}
     >
       <div
         className="absolute top-4 right-4 opacity-20"
-        style={{ color: isRed ? "#ef4444" : "#6366f1" }}
+        style={{ color: isRed ? colors.red : colors.indigo }}
       >
         {icon}
       </div>
       <p
         className="text-3xl font-bold tabular-nums"
-        style={{ color: isRed ? "#ef4444" : "#f1f5f9" }}
+        style={{ color: isRed ? colors.red : colors.text }}
       >
         {counted}{suffix}
       </p>
@@ -135,7 +101,7 @@ function StatTile({
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div style={{ width: 3, height: 16, backgroundColor: "#6366f1", borderRadius: 2, flexShrink: 0 }} />
+      <div style={{ width: 3, height: 16, backgroundColor: colors.indigo, borderRadius: 2, flexShrink: 0 }} />
       <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{children}</h2>
     </div>
   );
@@ -269,7 +235,7 @@ export default function DashboardClient({ initialInterns, initialProjects, initi
                         <span className="text-sm font-medium text-slate-100 truncate">{p.name}</span>
                         <span className="text-xs text-slate-500 shrink-0 ml-3">{p.owner}</span>
                       </div>
-                      <ProgressBar pct={pct} color="#6366f1" animate={barsReady} />
+                      <ProgressBar pct={pct} color={colors.indigo} animate={barsReady} />
                       <div className="flex justify-between mt-1">
                         <span className="text-xs text-slate-600">{formatDateShort(p.start_date)}</span>
                         <span className="text-xs text-slate-600">{formatDateShort(p.end_date)}</span>
@@ -433,12 +399,12 @@ export default function DashboardClient({ initialInterns, initialProjects, initi
                 const segments: string[] = [];
                 if (available > 0) segments.push(`#22c55e 0deg ${greenDeg}deg`);
                 if (atCap > 0)     segments.push(`#f59e0b ${greenDeg}deg ${greenAmberDeg}deg`);
-                if (over > 0)      segments.push(`#ef4444 ${greenAmberDeg}deg 360deg`);
-                if (segments.length === 0) segments.push("#2a2d3a 0deg 360deg");
+                if (over > 0)      segments.push(`${colors.red} ${greenAmberDeg}deg 360deg`);
+                if (segments.length === 0) segments.push(`${colors.border} 0deg 360deg`);
 
                 const conicGrad = barsReady
                   ? `conic-gradient(${segments.join(", ")})`
-                  : "conic-gradient(#2a2d3a 0deg 360deg)";
+                  : `conic-gradient(${colors.border} 0deg 360deg)`;
 
                 // Donut hole = 65% of 56px outer diameter
                 const outerSize = 56;
@@ -485,7 +451,7 @@ export default function DashboardClient({ initialInterns, initialProjects, initi
                         {[
                           { label: "Available",   count: available, color: "#22c55e" },
                           { label: "At capacity", count: atCap,     color: "#f59e0b" },
-                          { label: "Overloaded",  count: over,      color: "#ef4444" },
+                          { label: "Overloaded",  count: over,      color: colors.red },
                         ].map(({ label, count, color }) => (
                           <div key={label} className="flex items-center gap-2 text-xs text-slate-500">
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />

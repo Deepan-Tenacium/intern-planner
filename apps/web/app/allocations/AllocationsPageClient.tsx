@@ -4,10 +4,10 @@ import { useState, useEffect, Fragment } from "react";
 import type { Allocation, Intern, Project } from "../types";
 import { useToast } from "../components/Toast";
 import { useIsManager } from "../hooks/useRole";
-import { getLoadStatus, statusHex, statusBgHex } from "../lib/workload";
+import { getLoadStatus, statusHex, statusBgHex, CAPACITY_THRESHOLD, OVERLOAD_THRESHOLD } from "../lib/workload";
 import type { LoadStatus } from "../lib/workload";
 import { initials, formatDateShort } from "../lib/utils";
-import { inputCls, inputStyle } from "../lib/forms";
+import { inputCls, inputStyle, colors } from "../lib/forms";
 import { IconTrash, IconPencil } from "../components/Icons";
 
 interface Props {
@@ -34,7 +34,7 @@ const IconX = () => (
 
 function StatTile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-xl border p-5" style={{ backgroundColor: "rgba(99,102,241,0.06)", borderColor: "#2a2d3a" }}>
+    <div className="rounded-xl border p-5" style={{ backgroundColor: "rgba(99,102,241,0.06)", borderColor: colors.border }}>
       <p className="text-2xl font-bold text-slate-100 tabular-nums">{value}</p>
       <p className="text-xs text-slate-400 mt-1 font-medium">{label}</p>
       {sub && <p className="text-xs text-slate-600 mt-0.5">{sub}</p>}
@@ -44,7 +44,7 @@ function StatTile({ label, value, sub }: { label: string; value: string | number
 
 // ── Mini Progress Bar ──────────────────────────────────────────────────────────
 
-function MiniBar({ hours, max = 40 }: { hours: number; max?: number }) {
+function MiniBar({ hours, max = OVERLOAD_THRESHOLD }: { hours: number; max?: number }) {
   const pct = Math.min(Math.round((hours / max) * 100), 100);
   const status = getLoadStatus(hours);
   return (
@@ -86,7 +86,7 @@ function AddAllocationModal({ interns, projects, internLoadMap, onClose, onCreat
   const [saving, setSaving] = useState(false);
 
   const selectedLoad = internId !== "" ? (internLoadMap.get(internId as number) ?? 0) : 0;
-  const overload = internId !== "" && selectedLoad > 30;
+  const overload = internId !== "" && selectedLoad > CAPACITY_THRESHOLD;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -124,7 +124,7 @@ function AddAllocationModal({ interns, projects, internLoadMap, onClose, onCreat
     >
       <div
         className="rounded-2xl border w-full max-w-md p-6"
-        style={{ backgroundColor: "#1a1d27", borderColor: "#2a2d3a" }}
+        style={{ backgroundColor: "#1a1d27", borderColor: colors.border }}
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-slate-100">Add Allocation</h2>
@@ -153,7 +153,7 @@ function AddAllocationModal({ interns, projects, internLoadMap, onClose, onCreat
               })}
             </select>
             {overload && (
-              <p className="mt-1 text-xs text-amber-400">⚠ This intern is already over 30h/wk</p>
+              <p className="mt-1 text-xs text-amber-400">⚠ This intern is already over {CAPACITY_THRESHOLD}h/wk</p>
             )}
           </div>
 
@@ -221,7 +221,7 @@ function AddAllocationModal({ interns, projects, internLoadMap, onClose, onCreat
               type="submit"
               disabled={saving}
               className="flex-1 rounded-lg py-2 text-sm font-semibold text-white disabled:opacity-50 transition-opacity"
-              style={{ backgroundColor: "#6366f1" }}
+              style={{ backgroundColor: colors.indigo }}
             >
               {saving ? "Saving…" : "Add Allocation"}
             </button>
@@ -300,7 +300,7 @@ function EditAllocationPanel({ allocation, internName, projectName, open, onClos
           height: "100vh",
           width: 440,
           background: "#1a1d27",
-          borderLeft: "1px solid #2a2d3a",
+          borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease",
@@ -308,7 +308,7 @@ function EditAllocationPanel({ allocation, internName, projectName, open, onClos
           flexDirection: "column",
         }}
       >
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #2a2d3a" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
           <h2 className="text-sm font-semibold text-slate-100">Edit Allocation</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-200 text-lg leading-none">✕</button>
         </div>
@@ -358,12 +358,12 @@ function EditAllocationPanel({ allocation, internName, projectName, open, onClos
               />
             </div>
 
-            <div className="flex gap-3 pt-2" style={{ borderTop: "1px solid #2a2d3a", paddingTop: 16 }}>
+            <div className="flex gap-3 pt-2" style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 16 }}>
               <button
                 type="button"
                 onClick={onClose}
                 className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
-                style={{ border: "1px solid #2a2d3a" }}
+                style={{ border: `1px solid ${colors.border}` }}
               >
                 Cancel
               </button>
@@ -424,7 +424,7 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
 
   const totalHours = [...internLoadMap.values()].reduce((s, v) => s + v, 0);
   const avgHours = interns.length > 0 ? (totalHours / interns.length).toFixed(1) : "0";
-  const atCapacity = interns.filter((i) => (internLoadMap.get(i.id) ?? 0) >= 40).length;
+  const atCapacity = interns.filter((i) => (internLoadMap.get(i.id) ?? 0) >= OVERLOAD_THRESHOLD).length;
 
   const hasFilter = search.trim() !== "" || projectFilter !== "" || loadFilter !== "all";
 
@@ -472,7 +472,7 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{ backgroundColor: "#6366f1" }}
+            style={{ backgroundColor: colors.indigo }}
           >
             <IconPlus />
             Add Allocation
@@ -484,7 +484,7 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatTile label="Total hours allocated / wk" value={`${totalHours}h`} />
         <StatTile label="Average hours per intern" value={`${avgHours}h`} />
-        <StatTile label="Interns at full capacity" value={atCapacity} sub="≥ 40h / wk" />
+        <StatTile label="Interns at full capacity" value={atCapacity} sub={`≥ ${OVERLOAD_THRESHOLD}h / wk`} />
       </div>
 
       {/* Filter bar */}
@@ -516,8 +516,8 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
               onClick={() => setLoadFilter(v)}
               className="px-3 py-2 transition-colors"
               style={{
-                backgroundColor: loadFilter === v ? "#6366f1" : "transparent",
-                color: loadFilter === v ? "#fff" : "#94a3b8",
+                backgroundColor: loadFilter === v ? colors.indigo : "transparent",
+                color: loadFilter === v ? "#fff" : colors.textMuted,
               }}
             >
               {LOAD_FILTER_LABELS[v]}
@@ -598,7 +598,7 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
                         style={
                           isActive
                             ? { background: "rgba(99,102,241,0.15)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.3)" }
-                            : { background: "rgba(100,116,139,0.15)", color: "#94a3b8", border: "1px solid rgba(100,116,139,0.3)" }
+                            : { background: "rgba(100,116,139,0.15)", color: colors.textMuted, border: "1px solid rgba(100,116,139,0.3)" }
                         }
                       >
                         {projectName}

@@ -31,7 +31,12 @@ def create_intern(body: schemas.InternCreate, db: Session = Depends(get_db), cur
 
 
 @router.patch("/{intern_id}", response_model=schemas.InternOut)
-def update_intern(intern_id: int, body: schemas.InternUpdate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
+def update_intern(
+    intern_id: int,
+    body: schemas.InternUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+):
     intern = db.get(models.Intern, intern_id)
     if not intern:
         raise HTTPException(status_code=404, detail="Intern not found")
@@ -52,7 +57,12 @@ def delete_intern(intern_id: int, db: Session = Depends(get_db), current_user=De
 
 
 @router.post("/{intern_id}/skills", response_model=schemas.InternSkillOut, status_code=201)
-def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
+def add_intern_skill(
+    intern_id: int,
+    body: schemas.InternSkillCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+):
     if not db.get(models.Intern, intern_id):
         raise HTTPException(status_code=404, detail="Intern not found")
     if not db.get(models.Skill, body.skill_id):
@@ -65,7 +75,13 @@ def add_intern_skill(intern_id: int, body: schemas.InternSkillCreate, db: Sessio
 
 
 @router.patch("/{intern_id}/skills/{skill_id}", response_model=schemas.InternSkillOut)
-def update_intern_skill(intern_id: int, skill_id: int, body: schemas.InternSkillUpdate, db: Session = Depends(get_db), current_user=Depends(require_manager)):
+def update_intern_skill(
+    intern_id: int,
+    skill_id: int,
+    body: schemas.InternSkillUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+):
     row = db.execute(
         select(models.InternSkill).where(
             models.InternSkill.intern_id == intern_id,
@@ -81,7 +97,12 @@ def update_intern_skill(intern_id: int, skill_id: int, body: schemas.InternSkill
 
 
 @router.delete("/{intern_id}/skills/{skill_id}", status_code=204)
-def delete_intern_skill(intern_id: int, skill_id: int, db: Session = Depends(get_db), current_user=Depends(require_manager)):
+def delete_intern_skill(
+    intern_id: int,
+    skill_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+):
     row = db.execute(
         select(models.InternSkill).where(
             models.InternSkill.intern_id == intern_id,

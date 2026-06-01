@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import type { Project, Allocation, Intern } from "../types";
 import { useToast } from "../components/Toast";
 import { useIsManager } from "../hooks/useRole";
+import { CAPACITY_THRESHOLD } from "../lib/workload";
+import { colors, inputCls, inputStyle, inputErrorStyle } from "../lib/forms";
 
 interface Props {
   initialProjects: Project[];
@@ -309,7 +311,7 @@ function AllocateModal({
                 );
               })}
             </select>
-            {selectedLoad > 30 && (
+            {selectedLoad > CAPACITY_THRESHOLD && (
               <p className="text-xs text-amber-400 mt-1.5">
                 ⚠ This intern is already at {selectedLoad}h/week
               </p>
@@ -374,19 +376,6 @@ function AllocateModal({
 }
 
 // ── new project panel ─────────────────────────────────────────────────────────
-
-const inputCls =
-  "w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-500";
-const inputStyle = {
-  background: "#0f1117",
-  border: "1px solid #2a2d3a",
-  color: "#f1f5f9",
-};
-const inputErrorStyle = {
-  background: "#0f1117",
-  border: "1px solid #ef4444",
-  color: "#f1f5f9",
-};
 
 interface ProjectFormState {
   name: string;
@@ -486,7 +475,7 @@ function NewProjectPanel({
           height: "100vh",
           width: 440,
           background: "#1a1d27",
-          borderLeft: "1px solid #2a2d3a",
+          borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease",
@@ -497,7 +486,7 @@ function NewProjectPanel({
         {/* header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: "1px solid #2a2d3a" }}
+          style={{ borderBottom: `1px solid ${colors.border}` }}
         >
           <h2 className="text-sm font-semibold text-slate-100">New Project</h2>
           <button
@@ -594,12 +583,12 @@ function NewProjectPanel({
         {/* footer */}
         <div
           className="flex gap-3 px-6 py-4"
-          style={{ borderTop: "1px solid #2a2d3a" }}
+          style={{ borderTop: `1px solid ${colors.border}` }}
         >
           <button
             onClick={handleCancel}
             className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
-            style={{ border: "1px solid #2a2d3a" }}
+            style={{ border: `1px solid ${colors.border}` }}
           >
             Cancel
           </button>
@@ -710,7 +699,7 @@ function EditProjectPanel({
           height: "100vh",
           width: 440,
           background: "#1a1d27",
-          borderLeft: "1px solid #2a2d3a",
+          borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease",
@@ -718,7 +707,7 @@ function EditProjectPanel({
           flexDirection: "column",
         }}
       >
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #2a2d3a" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
           <h2 className="text-sm font-semibold text-slate-100">Edit Project</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-200 text-lg leading-none">✕</button>
         </div>
@@ -799,11 +788,11 @@ function EditProjectPanel({
           </div>
         </div>
 
-        <div className="flex gap-3 px-6 py-4" style={{ borderTop: "1px solid #2a2d3a" }}>
+        <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${colors.border}` }}>
           <button
             onClick={onClose}
             className="flex-1 py-2 rounded-lg text-sm text-slate-300 hover:text-slate-100 transition-all"
-            style={{ border: "1px solid #2a2d3a" }}
+            style={{ border: `1px solid ${colors.border}` }}
           >
             Cancel
           </button>

@@ -1,14 +1,10 @@
 import { notFound } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
 import InternProfileClient from "./InternProfileClient";
 import type { Intern, Allocation, Project } from "../../types";
-import { INTERNAL_API_URL } from "../../lib/api";
+import { INTERNAL_API_URL, serverFetchHeaders } from "../../lib/api";
 
 export default async function InternProfilePage({ params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  const token = session?.user?.backendToken ?? "";
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const headers = await serverFetchHeaders();
 
   const [internRes, allocations, projects] = await Promise.all([
     fetch(`${INTERNAL_API_URL}/interns/${params.id}`, { headers, next: { revalidate: 30 } }),

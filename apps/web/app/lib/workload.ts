@@ -1,8 +1,11 @@
+export const OVERLOAD_THRESHOLD = 40; // hours/week — red
+export const CAPACITY_THRESHOLD = 30; // hours/week — amber
+
 export type LoadStatus = "green" | "amber" | "red";
 
 export function getLoadStatus(allocatedHours: number): LoadStatus {
-  if (allocatedHours >= 40) return "red";
-  if (allocatedHours >= 30) return "amber";
+  if (allocatedHours >= OVERLOAD_THRESHOLD) return "red";
+  if (allocatedHours >= CAPACITY_THRESHOLD) return "amber";
   return "green";
 }
 

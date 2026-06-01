@@ -1,17 +1,40 @@
+# Python
 __pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.egg-info/
+*.egg
+.venv/
+venv/
+
+# Environment files — never commit real secrets
 .env
 .env.local
+.env.production
+.env.staging
 **/.env
 **/.env.local
-node_modules/
+**/.env.production
+**/.env.staging
+
+# Next.js
 .next/
-*.egg-info/
-.DS_Store
-test-screenshots/
-.playwright-mcp/
+out/
+node_modules/
+
+# Testing
 apps/web/test-results/
 apps/web/.last-run.json
 apps/web/tests/.auth/
 apps/web/playwright/.auth/
+test-screenshots/
+.playwright-mcp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic compiled
+apps/api/alembic/**/__pycache__/
