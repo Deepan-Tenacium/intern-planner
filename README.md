@@ -14,7 +14,7 @@ Intern Resource Planner is an internal tool built for Tenacium DC to help manage
 
 | Tool | Role |
 |---|---|
-| **FastAPI** | Python REST API — handles all CRUD endpoints |
+| **FastAPI** | Async Python REST API — all route handlers use `async/await` |
 | **SQLAlchemy 2.0** | ORM for database access (uses `select()` syntax) |
 | **Alembic** | Database migrations |
 | **Pydantic v2** | Request/response validation and serialization |
@@ -93,6 +93,25 @@ The app uses JWT-based authentication with two roles:
 - Full workload table sorted by load status (overloaded first)
 - Gradient progress bars per intern
 - Summary banner: overloaded / at capacity / has space counts
+
+### Global Search
+- Triggered with `Ctrl+K` from any page
+- Searches across interns and projects by name
+
+---
+
+## Architecture Notes
+
+### Async Python backend
+All FastAPI route handlers are `async def`, using `await` with SQLAlchemy's async session. This keeps the event loop unblocked under concurrent requests without needing multiple threads.
+
+### Next.js Server / Client component split
+Pages follow the Next.js App Router pattern:
+- `page.tsx` — server component, runs on the server, fetches data directly
+- `*Client.tsx` — client component (`"use client"`), receives data as props, owns all interactive state (panels, modals, forms, toasts)
+- `loading.tsx` — skeleton UI shown by Next.js while the server component fetches data
+
+This means the initial HTML is server-rendered with real data; client-side JS only hydrates the interactive layer.
 
 ---
 
@@ -270,15 +289,37 @@ intern-planner/
 │   │
 │   └── web/                    # Next.js frontend
 │       └── app/
-│           ├── page.tsx              # Dashboard
-│           ├── interns/              # Interns list + detail pages
-│           ├── projects/             # Projects page
-│           ├── allocations/          # Allocations page
-│           ├── workload/             # Workload page
+│           ├── page.tsx              # Dashboard (server component — fetches data)
+│           ├── DashboardClient.tsx   # Dashboard (client component — interactivity)
+│           ├── loading.tsx           # Dashboard skeleton
+│           ├── interns/
+│           │   ├── page.tsx          # Interns list (server component)
+│           │   ├── InternsClient.tsx # Interns list (client component)
+│           │   ├── loading.tsx
+│           │   └── [id]/
+│           │       ├── page.tsx               # Intern profile (server component)
+│           │       ├── InternProfileClient.tsx # Intern profile (client component)
+│           │       └── loading.tsx
+│           ├── projects/
+│           │   ├── page.tsx          # Projects (server component)
+│           │   ├── ProjectsClient.tsx
+│           │   └── loading.tsx
+│           ├── allocations/
+│           │   ├── page.tsx          # Allocations (server component)
+│           │   ├── AllocationsPageClient.tsx
+│           │   └── loading.tsx
+│           ├── workload/
+│           │   ├── page.tsx
+│           │   └── loading.tsx
 │           ├── login/                # Login page (credentials + GitHub OAuth)
+│           ├── lib/
+│           │   ├── api.ts            # Typed fetch helpers
+│           │   ├── forms.ts          # Form validation helpers
+│           │   ├── utils.ts          # Shared utility functions
+│           │   └── workload.ts       # Workload calculation helpers
 │           ├── hooks/
 │           │   └── useRole.ts        # useIsManager() hook for role-based UI
-│           ├── components/           # Shared UI (AppShell, Sidebar, NavLink, Toast)
+│           ├── components/           # Shared UI (AppShell, Sidebar, NavLink, Toast, Icons)
 │           └── api/
 │               ├── auth/             # NextAuth route (credentials + GitHub provider)
 │               └── proxy/            # Proxy route — forwards requests to API with Bearer token
