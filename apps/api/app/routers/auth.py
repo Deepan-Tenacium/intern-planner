@@ -64,9 +64,9 @@ def github_login():
 
 
 @router.get("/github/callback", response_model=Token)
-def github_callback(code: str, db: Session = Depends(get_db)):
-    with httpx.Client() as client:
-        token_resp = client.post(
+async def github_callback(code: str, db: Session = Depends(get_db)):
+    async with httpx.AsyncClient() as client:
+        token_resp = await client.post(
             "https://github.com/login/oauth/access_token",
             json={
                 "client_id": GITHUB_CLIENT_ID,
@@ -80,12 +80,12 @@ def github_callback(code: str, db: Session = Depends(get_db)):
         gh_token = token_resp.json().get("access_token")
 
     headers = {"Authorization": f"Bearer {gh_token}"}
-    with httpx.Client() as client:
-        user_resp = client.get("https://api.github.com/user", headers=headers)
+    async with httpx.AsyncClient() as client:
+        user_resp = await client.get("https://api.github.com/user", headers=headers)
         user_resp.raise_for_status()
         gh_user = user_resp.json()
 
-        emails_resp = client.get("https://api.github.com/user/emails", headers=headers)
+        emails_resp = await client.get("https://api.github.com/user/emails", headers=headers)
         emails_resp.raise_for_status()
         gh_emails = emails_resp.json()
 
