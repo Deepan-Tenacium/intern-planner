@@ -96,14 +96,14 @@ export default async function WorkloadPage() {
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /> 40+ hrs (overloaded)</span>
           </div>
 
-          <div className="bg-card border border-card-border rounded-xl divide-y divide-card-border">
+          <div className="bg-card border border-card-border rounded-xl divide-y divide-card-border overflow-x-auto">
             {rows.map(({ intern, allocated, status, pct }, i) => (
               <div
                 key={intern.id}
-                className="px-5 py-4 flex items-center gap-6 animate-fade-in"
+                className="px-5 py-4 flex items-center gap-4 sm:gap-6 animate-fade-in min-w-[420px]"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
-                <div className="w-44 shrink-0">
+                <div className="w-28 sm:w-44 shrink-0">
                   <p className="text-sm font-medium text-slate-200 truncate">{intern.name}</p>
                 </div>
 
@@ -114,7 +114,7 @@ export default async function WorkloadPage() {
                   />
                 </div>
 
-                <div className={`w-36 shrink-0 text-xs font-semibold text-right tabular-nums ${textColors[status]}`}>
+                <div className={`w-20 sm:w-36 shrink-0 text-xs font-semibold text-right tabular-nums ${textColors[status]}`}>
                   {allocated} / {intern.weekly_capacity_hours} hrs
                   <span className="text-slate-600 font-normal ml-1">({pct}%)</span>
                 </div>

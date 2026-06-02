@@ -33,7 +33,8 @@ export default function AllocationsClient({ rows }: { rows: Row[] }) {
       </div>
 
       <div className="bg-card border border-card-border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] text-sm">
           <thead>
             <tr className="border-b border-card-border text-left">
               <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Intern</th>
@@ -69,6 +70,7 @@ export default function AllocationsClient({ rows }: { rows: Row[] }) {
           </tbody>
         </table>
 
+        </div>
         {filtered.length === 0 && (
           <p className="text-center text-slate-600 py-10 text-sm">
             {search ? "No interns match your search." : "No allocations yet."}

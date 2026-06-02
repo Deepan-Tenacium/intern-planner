@@ -328,7 +328,7 @@ function EditInternPanel({
           right: 0,
           top: 0,
           height: "100vh",
-          width: 440,
+          width: "min(440px, 100vw)",
           background: "#1a1d27",
           borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
@@ -557,7 +557,7 @@ function EditSkillsPanel({
           right: 0,
           top: 0,
           height: "100vh",
-          width: 440,
+          width: "min(440px, 100vw)",
           background: "#1a1d27",
           borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,
@@ -901,7 +901,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
         </div>
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard
             label="Cohort start"
             value={formatDate(intern.cohort_start)}
@@ -930,7 +930,7 @@ export default function InternProfileClient({ initialIntern, initialAllocations,
         </div>
 
         {/* ── Two-column layout ── */}
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
 
           {/* ── Left column: Skills ── */}
           <div className="flex-[3] min-w-0">

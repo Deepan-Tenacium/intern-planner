@@ -23,19 +23,30 @@ function Toast({ toast, onDone }: { toast: ToastState; onDone: () => void }) {
     };
   }, [onDone]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setVisible(false); setTimeout(onDone, 300); }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onDone]);
+
   const isSuccess = toast.variant === "success";
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       style={{
         position: "fixed",
-        bottom: 24,
+        bottom: "max(24px, env(safe-area-inset-bottom, 24px))",
         right: 24,
         zIndex: 9999,
         transform: visible ? "translateY(0)" : "translateY(20px)",
         opacity: visible ? 1 : 0,
         transition: "transform 0.25s ease, opacity 0.25s ease",
         pointerEvents: "none",
+        maxWidth: "calc(100vw - 48px)",
       }}
     >
       <div
@@ -44,7 +55,7 @@ function Toast({ toast, onDone }: { toast: ToastState; onDone: () => void }) {
             ? "bg-green-950 border-green-600 text-green-300"
             : "bg-red-950 border-red-600 text-red-300"
         }`}
-        style={{ minWidth: 240, maxWidth: 360 }}
+        style={{ minWidth: 220 }}
       >
         {toast.message}
       </div>

@@ -9,7 +9,7 @@ const navItems = [
     href: "/",
     label: "Dashboard",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
         <rect x="1" y="1" width="6.5" height="6.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
         <rect x="10.5" y="1" width="6.5" height="6.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
         <rect x="1" y="10.5" width="6.5" height="6.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
@@ -21,7 +21,7 @@ const navItems = [
     href: "/interns",
     label: "Interns",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
         <circle cx="7" cy="5" r="3" stroke="currentColor" strokeWidth="1.5" />
         <path d="M1 15c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <circle cx="13.5" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.25" />
@@ -33,7 +33,7 @@ const navItems = [
     href: "/projects",
     label: "Projects",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
         <path d="M1 4.5C1 3.672 1.672 3 2.5 3H7l2 2.5h6.5C16.328 5.5 17 6.172 17 7v7.5C17 15.328 16.328 16 15.5 16h-13C1.672 16 1 15.328 1 14.5V4.5z" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
@@ -42,7 +42,7 @@ const navItems = [
     href: "/allocations",
     label: "Allocations",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
         <rect x="1" y="3" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
         <path d="M1 7h16" stroke="currentColor" strokeWidth="1.5" />
         <path d="M6 1v4M12 1v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -56,7 +56,7 @@ const navItems = [
     href: "/workload",
     label: "Workload",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
         <rect x="1" y="10" width="3" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
         <rect x="5.5" y="6" width="3" height="11" rx="1" stroke="currentColor" strokeWidth="1.5" />
         <rect x="10" y="3" width="3" height="14" rx="1" stroke="currentColor" strokeWidth="1.5" />
@@ -66,7 +66,13 @@ const navItems = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+  isMobile: boolean;
+}
+
+export default function Sidebar({ open, onClose, isMobile }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -75,74 +81,49 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{
-        width: 240,
-        position: "fixed",
-        top: 0,
-        left: 0,
-        height: "100vh",
-        backgroundColor: "#13151f",
-        borderRight: "1px solid #2a2d3a",
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 50,
-      }}
+      className={`fixed top-0 left-0 h-screen w-60 bg-nav border-r border-card-border flex flex-col z-50 transition-transform duration-200 ${
+        open ? "translate-x-0" : "-translate-x-full"
+      }`}
     >
       {/* Logo area */}
-      <div
-        style={{
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "0 20px",
-          borderBottom: "1px solid #2a2d3a",
-          flexShrink: 0,
-        }}
-      >
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div className="h-16 flex items-center gap-2.5 px-5 border-b border-card-border shrink-0">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
           <polygon points="13,1 25,7 25,19 13,25 1,19 1,7" fill="none" stroke="#6366f1" strokeWidth="1.5" />
           <polygon points="13,6 20,10 20,16 13,20 6,16 6,10" fill="#6366f1" opacity="0.25" />
           <circle cx="13" cy="13" r="3" fill="#6366f1" />
         </svg>
-        <span style={{ color: "#ffffff", fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>
+        <span className="text-white text-[15px] font-semibold tracking-tight">
           Intern Planner
         </span>
+
+        {/* Close button — mobile only */}
+        {isMobile && (
+          <button
+            onClick={onClose}
+            className="ml-auto p-1 rounded text-slate-500 hover:text-slate-200 transition-colors"
+            aria-label="Close navigation"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Nav items */}
-      <nav style={{ flex: 1, padding: "12px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+      <nav className="flex-1 px-3 py-3 flex flex-col gap-0.5">
         {navItems.map(({ href, label, icon }) => {
           const active = isActive(href);
           return (
             <Link
               key={href}
               href={href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 16px",
-                borderRadius: 8,
-                textDecoration: "none",
-                color: active ? "#ffffff" : "#94a3b8",
-                backgroundColor: active ? "#6366f1" : "transparent",
-                transition: "color 0.15s, background-color 0.15s",
-                fontSize: 14,
-                fontWeight: active ? 500 : 400,
-              }}
-              onMouseEnter={(e) => {
-                if (!active) {
-                  (e.currentTarget as HTMLAnchorElement).style.color = "#f1f5f9";
-                  (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "#1e2130";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!active) {
-                  (e.currentTarget as HTMLAnchorElement).style.color = "#94a3b8";
-                  (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "transparent";
-                }
-              }}
+              onClick={isMobile ? onClose : undefined}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm transition-colors duration-150 ${
+                active
+                  ? "bg-indigo-500 text-white font-medium"
+                  : "text-slate-400 hover:text-slate-100 hover:bg-[#1e2130]"
+              }`}
             >
               {icon}
               {label}
@@ -153,64 +134,24 @@ export default function Sidebar() {
 
       {/* User info + sign out */}
       {session?.user && (
-        <div
-          style={{
-            padding: "14px 20px",
-            borderTop: "1px solid #2a2d3a",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ color: "#f1f5f9", fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+        <div className="px-5 py-3.5 border-t border-card-border shrink-0">
+          <p className="text-[13px] font-medium text-slate-100 mb-1">
             {session.user.name ?? session.user.email}
-          </div>
-          <div style={{ marginBottom: 10 }}>
+          </p>
+          <div className="mb-2.5">
             {(session.user as any).role === "manager" ? (
-              <span
-                style={{
-                  display: "inline-block",
-                  backgroundColor: "#3730a3",
-                  color: "#a5b4fc",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                }}
-              >
+              <span className="inline-block bg-indigo-900/60 text-indigo-300 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide">
                 Manager
               </span>
             ) : (
-              <span
-                style={{
-                  display: "inline-block",
-                  backgroundColor: "#1e2130",
-                  color: "#94a3b8",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                }}
-              >
+              <span className="inline-block bg-[#1e2130] text-slate-400 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide">
                 Intern
               </span>
             )}
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              fontSize: 12,
-              cursor: "pointer",
-              padding: 0,
-              transition: "color 0.15s",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#64748b"; }}
+            className="text-slate-500 text-xs hover:text-red-400 transition-colors cursor-pointer"
           >
             Sign out
           </button>
@@ -218,15 +159,9 @@ export default function Sidebar() {
       )}
 
       {/* Bottom branding */}
-      <div
-        style={{
-          padding: "12px 20px",
-          borderTop: "1px solid #2a2d3a",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ color: "#64748b", fontSize: 12, fontWeight: 500 }}>Tenacium</div>
-        <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>v1.0</div>
+      <div className="px-5 py-3 border-t border-card-border shrink-0">
+        <p className="text-slate-500 text-xs font-medium">Tenacium</p>
+        <p className="text-slate-500 text-[11px] mt-0.5">v1.0</p>
       </div>
     </aside>
   );

@@ -272,7 +272,7 @@ function NewInternPanel({
           right: 0,
           top: 0,
           height: "100vh",
-          width: 440,
+          width: "min(440px, 100vw)",
           background: "#1a1d27",
           borderLeft: `1px solid ${colors.border}`,
           zIndex: 100,

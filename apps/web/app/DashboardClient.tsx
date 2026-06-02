@@ -212,7 +212,7 @@ export default function DashboardClient({ initialInterns, initialProjects, initi
       </div>
 
       {/* ── ROW 2: Active Projects + Workload Snapshot ── */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Projects — 2/3 */}
         <div className="col-span-2 bg-card border border-card-border rounded-xl p-5">
           <SectionHeader>Active Projects</SectionHeader>
@@ -300,7 +300,7 @@ export default function DashboardClient({ initialInterns, initialProjects, initi
       </div>
 
       {/* ── ROW 3: Recent Allocations + Cohort Overview ── */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Allocations */}
         <div className="bg-card border border-card-border rounded-xl p-5">
           <SectionHeader>Recent Allocations</SectionHeader>

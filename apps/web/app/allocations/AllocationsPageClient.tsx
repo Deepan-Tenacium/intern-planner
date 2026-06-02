@@ -481,7 +481,7 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
       </div>
 
       {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatTile label="Total hours allocated / wk" value={`${totalHours}h`} />
         <StatTile label="Average hours per intern" value={`${avgHours}h`} />
         <StatTile label="Interns at full capacity" value={atCapacity} sub={`≥ ${OVERLOAD_THRESHOLD}h / wk`} />
@@ -537,7 +537,8 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
 
       {/* Table */}
       <div className="rounded-xl border border-card-border overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-card-border text-left">
               <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Intern</th>
@@ -700,6 +701,7 @@ export default function AllocationsPageClient({ initialAllocations, initialInter
             })}
           </tbody>
         </table>
+        </div>
 
         {filtered.length === 0 && (
           <p className="text-center text-slate-600 py-10 text-sm">
